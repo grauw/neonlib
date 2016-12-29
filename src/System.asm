@@ -1,6 +1,31 @@
 ;
 ; System routines
 ;
+System: MACRO
+	; Up to 19% faster alternative for large LDIRs (break-even at 21 loops)
+	; hl = source
+	; de = destination
+	; bc = byte count
+	FastLDIR: PROC
+		xor a
+		sub c
+		and 16-1
+		add a,a
+		di
+		ld (jumpOffset),a
+		ei
+		jr nz,$
+	jumpOffset: equ $ - 1
+	Loop:
+		REPT 16
+		ldi
+		ENDM
+		jp pe,Loop
+		ret
+		ENDP
+	ENDM
+
+System_FastLDIR: equ System_instance.FastLDIR
 
 ; a = character
 ; Modifies: none
@@ -247,32 +272,6 @@ System_GetStringLength:
 	cpl
 	ret
 
-	SECTION RAM_PAGE0
-
-; Up to 19% faster alternative for large LDIRs (break-even at 21 loops)
-; hl = source
-; de = destination
-; bc = byte count
-System_FastLDIR: PROC
-	xor a
-	sub c
-	and 16-1
-	add a,a
-	di
-	ld (jumpOffset),a
-	ei
-	jr nz,$
-jumpOffset: equ $ - 1
-Loop:
-	REPT 16
-	ldi
-	ENDM
-	jp pe,Loop
-	ret
-	ENDP
-
-	ENDS
-
 	IF $ < 100H
 		ERROR "Must be at address >= 100H"
 	ENDIF
@@ -397,3 +396,9 @@ System_exceptionMessage:
 
 System_crlf:
 	db "\r\n", 0
+
+	SECTION RAM_PAGE0
+
+System_instance: System
+
+	ENDS
