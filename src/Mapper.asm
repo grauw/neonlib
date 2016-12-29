@@ -158,7 +158,7 @@ NotExpanded:
 	ENDP
 
 ;
-	SECTION RAM_PAGE0
+	SECTION RAM_RESIDENT
 
 Mapper_instance: Mapper
 

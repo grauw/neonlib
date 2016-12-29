@@ -452,7 +452,7 @@ System_exceptionMessage:
 System_crlf:
 	db "\r\n", 0
 
-	SECTION RAM_PAGE0
+	SECTION RAM_RESIDENT
 
 System_instance: System
 
