@@ -49,7 +49,7 @@ MSX2:
 	ret
 	ENDP
 
-; Modifies: af, bc, de, hl, ix, iy
+; Modifies: af, bc, de, hl
 VDP_InitScreen0: PROC
 	xor a
 	ld hl,0
@@ -63,14 +63,18 @@ VDP_InitScreen0: PROC
 	call System_ReadBIOS
 	and a
 	jr z,MSX1
+	push ix
 	ld ix,INITXT
 	call System_CallBIOS
+	pop ix
 	ret
 MSX1: ; complicated dance to enable TEXT 2 mode on MSX1 computers with v9938
 	ld hl,1000H              ; increase pattern generator table address
 	ld (TXTCGP),hl           ; so that it isn’t overwritten in 80x26.5 mode
+	push ix
 	ld ix,INITXT
 	call System_CallBIOS
+	pop ix
 	ld a,(VDP_MIRROR_0)      ; change TEXT1 to TEXT2 mode
 	or 4
 	ld (VDP_MIRROR_0),a
@@ -86,8 +90,10 @@ MSX1: ; complicated dance to enable TEXT 2 mode on MSX1 computers with v9938
 
 VDP_InitScreen5:
 	ld a,5
+	push ix
 	ld ix,INITXT
 	call System_CallBIOS
+	pop ix
 	ret
 
 VDP_Enable212Lines:
