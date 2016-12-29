@@ -407,10 +407,10 @@ System_GetHighResTimerValue:
 	ld l,0
 	ret
 
-System_Stop:
+System_Halt:
 	di
 	halt
-	jp System_Stop
+	jr System_Halt
 
 System_ThrowException:
 	IF DEBUG
@@ -418,7 +418,7 @@ System_ThrowException:
 	ENDIF
 	pop de
 	call System_PrintExceptionMessage
-	jp System_Stop
+	jp System_Halt
 
 ; hl = message
 System_ThrowExceptionWithMessage:
@@ -430,7 +430,7 @@ System_ThrowExceptionWithMessage:
 	call System_PrintExceptionMessage
 	pop hl
 	call System_PrintLn
-	jp System_Stop
+	jp System_Halt
 
 ; de = address
 System_PrintExceptionMessage:
