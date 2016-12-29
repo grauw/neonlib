@@ -91,7 +91,7 @@ MSX1: ; complicated dance to enable TEXT 2 mode on MSX1 computers with v9938
 VDP_InitScreen5:
 	ld a,5
 	push ix
-	ld ix,INITXT
+	ld ix,CHGMOD
 	call System_CallBIOS
 	pop ix
 	ret
