@@ -2,6 +2,14 @@
 ; System routines
 ;
 System: MACRO
+	CallBIOS:
+		jp System_CallBIOS_Interslot
+	callBIOSHandler: equ $ - 2
+
+	ReadBIOS:
+		jp System_ReadBIOS_Interslot
+	readBIOSHandler: equ $ - 2
+
 	; Up to 19% faster alternative for large LDIRs (break-even at 21 loops)
 	; hl = source
 	; de = destination
@@ -25,10 +33,25 @@ System: MACRO
 		ENDP
 	ENDM
 
+System_CallBIOS: equ System_instance.CallBIOS
+System_ReadBIOS: equ System_instance.ReadBIOS
 System_FastLDIR: equ System_instance.FastLDIR
 
+System_SetDirectBIOSHandlers:
+	ld hl,System_CallBIOS_Direct
+	ld (System_instance.callBIOSHandler),hl
+	ld hl,System_ReadBIOS_Direct
+	ld (System_instance.readBIOSHandler),hl
+	ret
+
 ; ix = call address
-System_CallBIOS:
+System_CallBIOS_Direct:
+	call System_JumpIX
+	ei
+	ret
+
+; ix = call address
+System_CallBIOS_Interslot:
 	exx
 	ex af,af'
 	push af
@@ -54,7 +77,14 @@ System_CallBIOS:
 
 ; hl = read address
 ; a <- value
-System_ReadBIOS:
+System_ReadBIOS_Direct:
+	ld a,(hl)
+	ei
+	ret
+
+; hl = read address
+; a <- value
+System_ReadBIOS_Interslot:
 	exx
 	ex af,af'
 	push af
