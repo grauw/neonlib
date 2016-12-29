@@ -17,10 +17,8 @@ VDP_MODE_TEXT2: equ 01001B
 
 ;
 VDP_InitMirrorsOnVDPUpgrades: PROC
-	ld a,(EXPTBL)
 	ld hl,IDBYT2
-	call RDSLT
-	ei
+	call System_ReadBIOS
 	and a
 	cp 1
 	jr c,MSX1
@@ -35,10 +33,8 @@ MSX1:
 	ld de,VDP_MIRROR_25 + 25
 	ld bc,3
 	ldir
-	ld a,(EXPTBL)
 	ld hl,IDBYT0
-	call RDSLT
-	ei
+	call System_ReadBIOS
 	and 10000000B
 	ret z
 	ld a,(VDP_MIRROR_8 + 9)  ; set PAL bit
@@ -63,24 +59,18 @@ VDP_InitScreen0: PROC
 	call VDP_Fill
 	ld a,80
 	ld (LINL40),a
-	ld a,(EXPTBL)
 	ld hl,IDBYT2
-	call RDSLT
-	ei
+	call System_ReadBIOS
 	and a
 	jr z,MSX1
-	ld iy,(EXPTBL - 1)
 	ld ix,INITXT
-	call CALSLT
-	ei
+	call System_CallBIOS
 	ret
 MSX1: ; complicated dance to enable TEXT 2 mode on MSX1 computers with v9938
 	ld hl,1000H              ; increase pattern generator table address
 	ld (TXTCGP),hl           ; so that it isn’t overwritten in 80x26.5 mode
-	ld iy,(EXPTBL - 1)
 	ld ix,INITXT
-	call CALSLT
-	ei
+	call System_CallBIOS
 	ld a,(VDP_MIRROR_0)      ; change TEXT1 to TEXT2 mode
 	or 4
 	ld (VDP_MIRROR_0),a
@@ -96,9 +86,8 @@ MSX1: ; complicated dance to enable TEXT 2 mode on MSX1 computers with v9938
 
 VDP_InitScreen5:
 	ld a,5
-	ld iy,(EXPTBL - 1)
 	ld ix,INITXT
-	call CHGMOD
+	call System_CallBIOS
 	ret
 
 VDP_Enable212Lines:

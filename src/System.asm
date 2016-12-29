@@ -27,9 +27,8 @@ System: MACRO
 
 System_FastLDIR: equ System_instance.FastLDIR
 
-; a = character
-; Modifies: none
-System_PrintChar:
+; ix = call address
+System_CallBIOS:
 	exx
 	ex af,af'
 	push af
@@ -38,14 +37,11 @@ System_PrintChar:
 	push hl
 	ex af,af'
 	exx
-	push ix
 	push iy
-	ld iy,(EXPTBL-1)
-	ld ix,CHPUT
+	ld iy,(EXPTBL - 1)
 	call CALSLT
 	ei
 	pop iy
-	pop ix
 	exx
 	ex af,af'
 	pop hl
@@ -54,6 +50,41 @@ System_PrintChar:
 	pop af
 	ex af,af'
 	exx
+	ret
+
+; hl = read address
+; a <- value
+System_ReadBIOS:
+	exx
+	ex af,af'
+	push af
+	push bc
+	push de
+	push hl
+	ex af,af'
+	exx
+	push iy
+	ld a,(EXPTBL)
+	call RDSLT
+	ei
+	pop iy
+	exx
+	ex af,af'
+	pop hl
+	pop de
+	pop bc
+	pop af
+	ex af,af'
+	exx
+	ret
+
+; a = character
+; Modifies: none
+System_PrintChar:
+	push ix
+	ld ix,CHPUT
+	call System_CallBIOS
+	pop ix
 	ret
 
 ; hl = string (0-terminated)
@@ -313,28 +344,22 @@ System_EnableTurbo:
 	call System_IsTurboR
 	ret c
 	ld a,10000001B
-	ld iy,(EXPTBL-1)
 	ld ix,CHGCPU
-	call CALSLT
-	ei
+	call System_CallBIOS
 	ret
 
 System_DisableTurbo:
 	call System_IsTurboR
 	ret c
 	ld a,10000000B
-	ld iy,(EXPTBL-1)
 	ld ix,CHGCPU
-	call CALSLT
-	ei
+	call System_CallBIOS
 	ret
 
 ; f <- c: not turbo R
 System_IsTurboR:
-	ld a,(EXPTBL)
 	ld hl,IDBYT2
-	call RDSLT
-	ei
+	call System_ReadBIOS
 	cp 3
 	ret
 
