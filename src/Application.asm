@@ -2,12 +2,15 @@
 ; Top-level application program class
 ;
 Application_Main:
+	ld hl,DOS_Terminate
+	call System_SetTerminateHandler
+
 	ld hl,Application_welcome
 	call System_Print
 
 	call DOS_IsDOS2
 	ld hl,Application_dos2RequiredError
-	jp c,Application_TerminateWithError
+	jp c,System_TerminateWithError
 
 	call Application_CheckStack
 
@@ -31,10 +34,10 @@ Application_CheckStack:
 	ld hl,-(HEAP + HEAP_SIZE + STACK_SIZE)
 	add hl,sp
 	ld hl,Application_insufficientTPAError
-	jp nc,Application_TerminateWithError
+	jp nc,System_TerminateWithError
 	ret
 
-; a <- DOS error code
+; a = DOS error code
 Application_CheckDOSError:
 	and a
 	ret z
@@ -45,12 +48,7 @@ Application_TerminateWithDOSError:
 	ld hl,Application_explainBuffer
 	call System_Print
 	call System_PrintCrLf
-	jp DOS_Terminate
-
-; hl <- message
-Application_TerminateWithError:
-	call System_Print
-	jp DOS_Terminate
+	jp System_Terminate
 
 ;
 Application_welcome:

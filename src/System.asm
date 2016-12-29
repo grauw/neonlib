@@ -10,6 +10,10 @@ System: MACRO
 		jp System_ReadBIOS_Interslot
 	readBIOSHandler: equ $ - 2
 
+	Terminate:
+		jp System_Halt
+	terminateHandler: equ $ - 2
+
 	; Up to 19% faster alternative for large LDIRs (break-even at 21 loops)
 	; hl = source
 	; de = destination
@@ -35,6 +39,7 @@ System: MACRO
 
 System_CallBIOS: equ System_instance.CallBIOS
 System_ReadBIOS: equ System_instance.ReadBIOS
+System_Terminate: equ System_instance.Terminate
 System_FastLDIR: equ System_instance.FastLDIR
 
 System_SetDirectBIOSHandlers:
@@ -42,6 +47,11 @@ System_SetDirectBIOSHandlers:
 	ld (System_instance.callBIOSHandler),hl
 	ld hl,System_ReadBIOS_Direct
 	ld (System_instance.readBIOSHandler),hl
+	ret
+
+; hl = handler
+System_SetTerminateHandler:
+	ld (System_instance.terminateHandler),hl
 	ret
 
 ; ix = call address
@@ -412,13 +422,18 @@ System_Halt:
 	halt
 	jr System_Halt
 
+; hl = message
+System_TerminateWithError:
+	call System_Print
+	jp System_Terminate
+
 System_ThrowException:
 	IF DEBUG
 	in a,(02EH)
 	ENDIF
 	pop de
 	call System_PrintExceptionMessage
-	jp System_Halt
+	jp System_Terminate
 
 ; hl = message
 System_ThrowExceptionWithMessage:
@@ -430,7 +445,7 @@ System_ThrowExceptionWithMessage:
 	call System_PrintExceptionMessage
 	pop hl
 	call System_PrintLn
-	jp System_Halt
+	jp System_Terminate
 
 ; de = address
 System_PrintExceptionMessage:
