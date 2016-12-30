@@ -2,10 +2,15 @@
 ; System routines
 ;
 System: MACRO
+	; ix = call address
+	; Modifies: iff (interrupts enabled)
 	CallBIOS:
 		jp System_CallBIOS_Interslot
 	callBIOSHandler: equ $ - 2
 
+	; hl = read address
+	; a <- value
+	; Modifies: af, iff (interrupts enabled)
 	ReadBIOS:
 		jp System_ReadBIOS_Interslot
 	readBIOSHandler: equ $ - 2
@@ -55,12 +60,14 @@ System_SetTerminateHandler:
 	ret
 
 ; ix = call address
+; Modifies: iff (interrupts enabled)
 System_CallBIOS_Direct:
 	call System_JumpIX
 	ei
 	ret
 
 ; ix = call address
+; Modifies: iff (interrupts enabled)
 System_CallBIOS_Interslot:
 	exx
 	ex af,af'
@@ -87,6 +94,7 @@ System_CallBIOS_Interslot:
 
 ; hl = read address
 ; a <- value
+; Modifies: af, iff (interrupts enabled)
 System_ReadBIOS_Direct:
 	ld a,(hl)
 	ei
@@ -94,6 +102,7 @@ System_ReadBIOS_Direct:
 
 ; hl = read address
 ; a <- value
+; Modifies: af, iff (interrupts enabled)
 System_ReadBIOS_Interslot:
 	push bc
 	push de
