@@ -95,27 +95,12 @@ System_ReadBIOS_Direct:
 ; hl = read address
 ; a <- value
 System_ReadBIOS_Interslot:
-	exx
-	ex af,af'
-	push af
 	push bc
 	push de
-	push hl
-	ex af,af'
-	exx
-	push iy
 	ld a,(EXPTBL)
 	call RDSLT
-	ei
-	pop iy
-	exx
-	ex af,af'
-	pop hl
 	pop de
 	pop bc
-	pop af
-	ex af,af'
-	exx
 	ret
 
 ; a = character
