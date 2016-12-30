@@ -1,6 +1,5 @@
 all:
 	mkdir -p gen bin
-	node tools/gencrctable.js > gen/crctable.asm
 	java -jar tools/glass.jar -I gen src/COM.asm bin/neonlib.com bin/neonlib.sym
 
 run: all

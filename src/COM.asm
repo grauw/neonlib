@@ -47,10 +47,6 @@ COM_Main:
 	INCLUDE "FileWriter.asm"
 	INCLUDE "NullWriter.asm"
 
-	ALIGN 100H
-CRC32Table:
-	INCLUDE "crctable.asm"
-
 	ENDS
 
 	SECTION RAM
