@@ -272,6 +272,30 @@ Loop:
 	jp Loop
 	ENDP
 
+; debc = byte count
+; iy = this
+; iy = reader
+Writer_CopyFromReader32: PROC
+	ld a,c
+	or b
+	push de
+	call nz,Writer_CopyFromReader
+	pop de
+	inc de
+Loop:
+	dec de
+	ld a,e
+	or d
+	ret z
+	push de
+	ld bc,8000H
+	call Writer_CopyFromReader
+	ld bc,8000H
+	call Writer_CopyFromReader
+	pop de
+	jp Loop
+	ENDP
+
 ; ix = this
 ; hl <- buffer position
 ; Modifies: af
