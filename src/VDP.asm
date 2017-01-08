@@ -96,6 +96,13 @@ VDP_InitScreen5:
 	pop ix
 	ret
 
+VDP_InitText:
+	push ix
+	ld ix,TOTEXT
+	call System_CallBIOS
+	pop ix
+	ret
+
 VDP_Enable212Lines:
 	ld a,(VDP_MIRROR_8 + 9)
 	or 10000000B
