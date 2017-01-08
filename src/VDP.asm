@@ -50,7 +50,7 @@ MSX2:
 	ENDP
 
 ; Modifies: af, bc, de, hl
-VDP_InitScreen0: PROC
+VDP_InitScreen0Width80: PROC
 	xor a
 	ld hl,0
 	call VDP_SetWriteAddress
