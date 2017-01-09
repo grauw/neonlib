@@ -174,6 +174,40 @@ Reader_ReadDoubleWordBE_IY:
 	ld l,a
 	ret
 
+; Read block to buffer
+; bc = byte count requested
+; de = destination
+; iy = this
+; bc <- byte count (<= bytes requested)
+; Modifies: af
+Reader_ReadBlock_IY: PROC
+	push bc
+Loop:
+	push bc
+	call Reader_ReadBlockDirect_IY
+	ld a,b
+	or c
+	jr z,NoMoreBytes
+	push bc
+	call System_FastLDIR
+	pop bc
+	pop hl
+	and a
+	sbc hl,bc
+	ld c,l
+	ld b,h
+	jr nz,Loop
+	pop bc
+	ret
+NoMoreBytes:
+	pop bc
+	pop hl
+	sbc hl,bc
+	ld c,l
+	ld b,h
+	ret
+	ENDP
+
 ; Read block directly from buffer
 ; bc = byte count requested
 ; iy = this
