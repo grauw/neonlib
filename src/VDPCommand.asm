@@ -114,6 +114,19 @@ VDPCommand_IsReady:
 	out (VDP_PORT_1),a
 	ret
 
+; iy = this
+; c <- transfer port
+; Modifies: af
+VDPCommand_PrepareTransfer:
+	ld c,VDP_PORT_3
+	ld a,44 | 128
+	di
+	out (VDP_PORT_1),a
+	ld a,17 | 128
+	ei
+	out (VDP_PORT_1),a
+	ret
+
 ; hl = source
 ; bc = byte count
 ; iy = this
