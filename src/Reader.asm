@@ -179,7 +179,8 @@ Reader_ReadDoubleWordBE_IY:
 ; de = destination
 ; iy = this
 ; bc <- byte count (<= bytes requested)
-; Modifies: af
+; de <- updated
+; Modifies: af, hl
 Reader_ReadBlock_IY: PROC
 	push bc
 Loop:
