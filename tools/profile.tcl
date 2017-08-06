@@ -114,6 +114,9 @@ namespace eval profile {
 	}
 	
 	proc osd_update {} {
+		if {![osd exists profile]} {
+			return
+		}
 		variable slots
 		variable index 0
 		foreach slotid [dict keys $slots] {
@@ -125,18 +128,16 @@ namespace eval profile {
 				
 				set fraction [expr $frame_total_time != 0 ? $frame_time / $frame_total_time : 0]
 				
-				if {[osd exists profile]} {
-					if {![osd exists profile.$slotid]} {
-						set rgba [osd_hya [expr $index * 0.14] 0.5 1.0]
-						osd create rectangle profile.$slotid -x 0 -y 0 -w $width -h $height -scaled true -clip true -rgba 0x00000088
-						osd create rectangle profile.$slotid.bar -x 0 -y 0 -w 0 -h $height -scaled true -rgba $rgba
-						osd create text profile.$slotid.text -x 2 -y 1 -size 5 -scaled true -rgba 0xffffffff
-					}
-					
-					osd configure profile.$slotid -x [expr ($index * $height / 240) * $width] -y [expr $index * $height % 240]
-					osd configure profile.$slotid.bar -w [expr ($fraction < 0 ? 0 : $fraction > 1 ? 1 : $fraction) * $width]
-					osd configure profile.$slotid.text -text [format "%s: %05.2f%%" $slotid [expr $fraction * 100]] 
+				if {![osd exists profile.$slotid]} {
+					set rgba [osd_hya [expr $index * 0.14] 0.5 1.0]
+					osd create rectangle profile.$slotid -x 0 -y 0 -w $width -h $height -scaled true -clip true -rgba 0x00000088
+					osd create rectangle profile.$slotid.bar -x 0 -y 0 -w 0 -h $height -scaled true -rgba $rgba
+					osd create text profile.$slotid.text -x 2 -y 1 -size 5 -scaled true -rgba 0xffffffff
 				}
+				
+				osd configure profile.$slotid -x [expr ($index * $height / 240) * $width] -y [expr $index * $height % 240]
+				osd configure profile.$slotid.bar -w [expr ($fraction < 0 ? 0 : $fraction > 1 ? 1 : $fraction) * $width]
+				osd configure profile.$slotid.text -text [format "%s: %05.2f%%" $slotid [expr $fraction * 100]] 
 				
 				incr index
 			}
