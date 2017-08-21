@@ -53,14 +53,14 @@ VDPCommand_Execute:
 	pop hl
 	jp VDPCommand_Execute_HL
 
-; ix = this
+; iy = this
 ; Modifies: af, bc, hl
 VDPCommand_Execute_IY:
 	push iy
 	pop hl
 	jp VDPCommand_Execute_HL
 
-; ix = this
+; hl = this
 ; Modifies: af, bc, hl
 VDPCommand_Execute_HL: PROC
 	ld c,VDP_PORT_3
@@ -90,14 +90,13 @@ WaitReady:
 	ret
 	ENDP
 
-; ix = this
+; Modifies: af
 VDPCommand_WaitReady:
 	call VDPCommand_IsReady
 	jr c,VDPCommand_WaitReady
 	ret
 
-; f <- c: not ready (CE=1)
-; ix = this
+; f <- c: not ready (CE = 1)
 ; Modifies: af
 VDPCommand_IsReady:
 	ld a,2
@@ -114,7 +113,6 @@ VDPCommand_IsReady:
 	out (VDP_PORT_1),a
 	ret
 
-; iy = this
 ; c <- transfer port
 ; Modifies: af
 VDPCommand_PrepareTransfer:
@@ -129,7 +127,6 @@ VDPCommand_PrepareTransfer:
 
 ; hl = source
 ; bc = byte count
-; iy = this
 ; Modifies: af, bc, de, hl
 VDPCommand_Transfer_IY: PROC
 	dec bc  ; 16-bit to 2x 8-bit loop
@@ -151,14 +148,13 @@ Loop:
 	ret
 	ENDP
 
-; ix = this
+; Modifies: af
 VDPCommand_WaitTransferReady:
 	call VDPCommand_IsTransferReady
 	jr nc,VDPCommand_WaitTransferReady
 	ret
 
 ; f <- c: ready (TR=1)
-; ix = this
 ; Modifies: af
 VDPCommand_IsTransferReady:
 	ld a,2
