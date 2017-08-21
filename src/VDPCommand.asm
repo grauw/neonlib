@@ -128,7 +128,7 @@ VDPCommand_PrepareTransfer:
 ; hl = source
 ; bc = byte count
 ; Modifies: af, bc, de, hl
-VDPCommand_Transfer_IY: PROC
+VDPCommand_Transfer: PROC
 	dec bc  ; 16-bit to 2x 8-bit loop
 	inc b
 	inc c
