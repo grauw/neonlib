@@ -113,6 +113,33 @@ VDPCommand_IsReady:
 	out (VDP_PORT_1),a
 	ret
 
+; a = start register offset
+; c <- command port
+; Modifies: af
+VDPCommand_PrepareCommand:
+	ld c,VDP_PORT_3
+	add a,32
+	di
+	out (VDP_PORT_1),a
+	ld a,17 | 128
+	ei
+	out (VDP_PORT_1),a
+WaitReady:
+	ld a,2
+	di
+	out (VDP_PORT_1),a  ; select s#2
+	ld a,15 | 128
+	out (VDP_PORT_1),a
+	in a,(VDP_PORT_1)
+	rra
+	ld a,0
+	out (VDP_PORT_1),a  ; select s#0
+	ld a,15 | 128
+	ei
+	out (VDP_PORT_1),a
+	jr c,WaitReady
+	ret
+
 ; c <- transfer port
 ; Modifies: af
 VDPCommand_PrepareTransfer:
