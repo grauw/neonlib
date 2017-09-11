@@ -424,7 +424,7 @@ Memory_CheckEIState_Page1:
 ; a = slot ID
 ; hl = address
 ; a <- value
-; Modifies: af, af', bc, de, hl
+; Modifies: af, af', bc, de
 ;
 Memory_ReadSlot:
 	push hl
@@ -443,7 +443,7 @@ Memory_ReadSlot:
 ; de = prepared slot id (2)
 ; hl = address
 ; a <- value
-; Modifies: af, af', bc, de, hl
+; Modifies: af, af', bc, de
 ;
 Memory_ReadPreparedSlot:
 	ld c,0A8H
@@ -502,7 +502,7 @@ Memory_ReadPreparedSlotPage0:
 ; a = slot ID
 ; c = value
 ; hl = address
-; Modifies: af, af', bc, de, hl
+; Modifies: af, af', bc, de
 ;
 Memory_WriteSlot:
 	push bc
@@ -523,7 +523,7 @@ Memory_WriteSlot:
 ; c = value
 ; de = prepared slot id (2)
 ; hl = address
-; Modifies: af, af', bc, de, hl
+; Modifies: af, af', bc, de
 ;
 Memory_WritePreparedSlot:
 	call System_CheckEIState
