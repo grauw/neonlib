@@ -22,3 +22,13 @@ ALIGN: MACRO ?boundary
 ALIGN_FIT8: MACRO ?size
 	ds (($ + ?size - 1) >> 8) != ($ >> 8) && (100H - ($ & 0FFH)) || 0
 	ENDM
+
+; Indirect jump with offset
+; ?register = hl, ix or iy
+; ?offset = bc or de
+JP_OFFSET: MACRO ?register, ?offset
+	push ?register
+	add ?register,?offset
+	ex (sp),?register
+	ret
+	ENDM
