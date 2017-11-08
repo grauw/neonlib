@@ -1,21 +1,28 @@
 ;
 ; Memory and slot-related routines
 ;
-Memory_GetSlot:
-	ld a,h
-	sub 64
-	jp c,Memory_GetSlotPage0
-	sub 64
-	jp c,Memory_GetSlotPage1
-	sub 64
-	jp c,Memory_GetSlotPage2
-	jp Memory_GetSlotPage3
 
-Memory_GetSlotPage0:
+; h = memory page
+; a <- slot ID formatted FxxxSSPP
+; Modifies: af, bc, de, hl
+Memory_GetSlot: PROC
 	in a,(0A8H)
+	bit 7,h
+	jr z,PrimaryShiftContinue
+	rrca
+	rrca
+	rrca
+	rrca
+PrimaryShiftContinue:
+	bit 6,h
+	jr z,PrimaryShiftDone
+	rrca
+	rrca
+PrimaryShiftDone:
 	and 00000011B
 	ld c,a
 	ld b,0
+	ex de,hl
 	ld hl,EXPTBL
 	add hl,bc
 	ld c,a
@@ -28,88 +35,23 @@ Memory_GetSlotPage0:
 	inc hl
 	inc hl
 	ld a,(hl)
-	and 00000011B
-	rlca
-	rlca
-	or c
-	ret
-
-Memory_GetSlotPage1:
-	in a,(0A8H)
-	and 00001100B
+	ex de,hl
+	bit 7,h
+	jr z,SecondaryShiftContinue
 	rrca
 	rrca
-	ld c,a
-	ld b,0
-	ld hl,EXPTBL
-	add hl,bc
-	ld c,a
-	ld a,(hl)
-	and 80H
-	or c
-	ld c,a
-	inc hl  ; move to SLTTBL
-	inc hl
-	inc hl
-	inc hl
-	ld a,(hl)
+	rrca
+	rrca
+SecondaryShiftContinue:
+	bit 6,h
+	jr nz,SecondaryShiftDone
+	rlca
+	rlca
+SecondaryShiftDone:
 	and 00001100B
 	or c
 	ret
-
-Memory_GetSlotPage2:
-	in a,(0A8H)
-	and 00110000B
-	rrca
-	rrca
-	rrca
-	rrca
-	ld c,a
-	ld b,0
-	ld hl,EXPTBL
-	add hl,bc
-	ld c,a
-	ld a,(hl)
-	and 80H
-	or c
-	ld c,a
-	inc hl  ; move to SLTTBL
-	inc hl
-	inc hl
-	inc hl
-	ld a,(hl)
-	and 00110000B
-	rrca
-	rrca
-	or c
-	ret
-
-Memory_GetSlotPage3:
-	in a,(0A8H)
-	and 11000000B
-	rlca
-	rlca
-	ld c,a
-	ld b,0
-	ld hl,EXPTBL
-	add hl,bc
-	ld c,a
-	ld a,(hl)
-	and 80H
-	or c
-	ld c,a
-	inc hl  ; move to SLTTBL
-	inc hl
-	inc hl
-	inc hl
-	ld a,(hl)
-	and 11000000B
-	rrca
-	rrca
-	rrca
-	rrca
-	or c
-	ret
+	ENDP
 
 ;
 ; Prepares a slot selection.
