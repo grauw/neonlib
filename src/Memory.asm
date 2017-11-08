@@ -224,83 +224,24 @@ Memory_CheckEIState_Page1:
 
 	ENDS
 
-;
 ; Reads a byte from a slot.
 ; The current interrupt enabled state is preserved.
-;
 ; a = slot ID
-; hl = address
+; hl = address (00H <= h < C0H)
 ; a <- value
-; Modifies: af, af', bc, de
-;
+; Modifies: af, bc, de
 Memory_ReadSlot:
-	push hl
-	call Memory_PrepareSlot
-	pop hl
-	bit 7,h
-	jp nz,Memory_ReadPreparedSlot
-	bit 6,h
-	jp nz,Memory_ReadPreparedSlot
-	jp Memory_ReadPreparedSlotPage0
-
-;
-; Reads a byte from a prepared slot.
-; The current interrupt enabled state is preserved.
-;
-; de = prepared slot id (2)
-; hl = address
-; a <- value
-; Modifies: af, af', bc, de
-;
-Memory_ReadPreparedSlot:
-	ld c,0A8H
+	ld b,a
 	call System_CheckEIState
-	ex af,af'
-	di
-	in b,(c)
-	out (c),d
-	ld a,(0FFFFH)
-	cpl
-	ex af,af'
-	ld a,e
-	ld (0FFFFH),a
-	ld a,(hl)
-	ex af,af'
-	ld (0FFFFH),a
-	out (c),b
-	ex af,af'
+	push af
+	ld a,b
+	call RDSLT
+	ld b,a
+	pop af
+	ld a,b
 	ret po
 	ei
 	ret
-
-	SECTION TPA_PAGE1
-
-;
-; Reads a byte from a prepared slot in page 0.
-; See ReadPreparedSlot.
-;
-Memory_ReadPreparedSlotPage0:
-	ld c,0A8H
-	call System_CheckEIState
-	ex af,af'
-	di
-	in b,(c)
-	out (c),d
-	ld a,(0FFFFH)
-	cpl
-	ex af,af'
-	ld a,e
-	ld (0FFFFH),a
-	ld a,(hl)
-	ex af,af'
-	ld (0FFFFH),a
-	out (c),b
-	ex af,af'
-	ret po
-	ei
-	ret
-
-	ENDS
 
 ;
 ; Writes a byte to a slot.
