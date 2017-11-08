@@ -130,41 +130,21 @@ ShiftDone:
 	ret
 	ENDP
 
-;
 ; Sets a slot in the page specified by h.
 ; The current interrupt enabled state is preserved.
-;
 ; a = slot ID formatted FxxxSSPP
-; h = memory page
-; Modifies: af, bc, de, hl
-;
+; h = memory page (40H <= h < C0H)
+; Modifies: af, bc, de
 Memory_SetSlot:
-	push hl
-	call Memory_PrepareSlot
-	pop hl
-	bit 7,h
-	jp nz,Memory_SetPreparedSlot
-	bit 6,h
-	jp nz,Memory_SetPreparedSlot
-	jp Memory_SetPreparedSlotPage0
-
-; a = slot ID formatted FxxxSSPP
-; Modifies: af, bc, de, hl
-Memory_SetSlotPage0:
-	ld h,00H
-	jp Memory_SetSlot
-
-; a = slot ID formatted FxxxSSPP
-; Modifies: af, bc, de, hl
-Memory_SetSlotPage1:
-	ld h,40H
-	jp Memory_SetSlot
-
-; a = slot ID formatted FxxxSSPP
-; Modifies: af, bc, de, hl
-Memory_SetSlotPage2:
-	ld h,80H
-	jp Memory_SetSlot
+	ld b,a
+	call System_CheckEIState
+	push af
+	ld a,b
+	call ENASLT
+	pop af
+	ret po
+	ei
+	ret
 
 ;
 ; Sets a prepared slot selection.
