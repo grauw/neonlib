@@ -87,15 +87,15 @@ Mapper_Destruct:
 ; ix = this
 Mapper_RestoreInitialState:
 	ld a,(ix + Mapper.primaryMapperSlot)
-	call Memory_SetSlotPage2
+	ld h,80H
+	call Memory_SetSlot
 	ld a,(ix + Mapper.initialPage2)
 	call Mapper_instance.PutP2
 	ld a,(ix + Mapper.primaryMapperSlot)
-	call Memory_SetSlotPage1
+	ld h,40H
+	call Memory_SetSlot
 	ld a,(ix + Mapper.initialPage1)
 	call Mapper_instance.PutP1
-	ld a,(ix + Mapper.primaryMapperSlot)
-	call Memory_SetSlotPage0
 	ld a,(ix + Mapper.initialPage0)
 	call Mapper_instance.PutP0
 	ret
