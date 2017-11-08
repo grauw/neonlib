@@ -206,6 +206,52 @@ Memory_SetPreparedSlotPage0:
 	ei
 	ret
 
+; Disables interrupts.
+; e <= original secondary slot register value (negated)
+; b <= original primary slot register value
+; c <= A8H
+; hl <= FFFFH
+; Modifies: bc, e, hl
+Memory_AccessPreparedSlot_BEGIN: MACRO
+	ld c,0A8H
+	ld hl,0FFFFH
+	di
+	in b,(c)
+	ld e,0
+preparedSlot: equ $ - 1
+	out (c),e
+	ld e,(hl)
+	ld (hl),0
+preparedSubslot: equ $ - 1
+	ENDM
+
+; Enables interrupts.
+; e = original secondary slot register value (negated)
+; b = original primary slot register value
+; c = A8H
+; Modifies: a
+Memory_AccessPreparedSlot_END: MACRO
+	ld a,e
+	cpl
+	ld (0FFFFH),a
+	ei
+	out (c),b
+	ENDM
+
+; Enables interrupts.
+; e = original secondary slot register value (negated)
+; b = original primary slot register value
+; c = A8H
+; hl = FFFFH
+; Modifies: a
+Memory_AccessPreparedSlot_END_HL: MACRO
+	ld a,e
+	cpl
+	ld (hl),a
+	ei
+	out (c),b
+	ENDM
+
 ; f: pe <- interrupts enabled
 ; Modifies: af
 Memory_CheckEIState_Page1:
