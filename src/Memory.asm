@@ -53,38 +53,14 @@ SecondaryShiftDone:
 	ret
 	ENDP
 
-;
 ; Prepares a slot selection.
-;
 ; a = slot ID formatted FxxxSSPP
 ; h = memory page
 ; bc <- prepared slot id (1) (b: primary value, c: SLTTBL LSB)
 ; de <- prepared slot id (2) (d: secondary’s primary value, e: secondary value)
 ; hl <- SLTTBL entry
 ; Modifies: af, bc, de, hl
-;
 Memory_PrepareSlot: PROC
-	bit 7,h
-	jr nz,Page23
-	bit 6,h
-	jp z,Memory_PrepareSlotPage0
-	jp Memory_PrepareSlotPage1
-Page23:
-	bit 6,h
-	jp z,Memory_PrepareSlotPage2
-	call System_ThrowException
-	ENDP
-
-;
-; Prepares a slot selection in page 0.
-;
-; a = slot ID formatted FxxxSSPP
-; bc <- prepared slot id (1) (b: primary value, c: SLTTBL LSB)
-; de <- prepared slot id (2) (d: secondary’s primary value, e: secondary value)
-; hl <- SLTTBL entry
-; Modifies: af, bc, de, hl
-;
-Memory_PrepareSlotPage0: PROC
 	and a
 	jp m,Expanded
 	call Expanded
@@ -103,144 +79,53 @@ Expanded:
 	ld e,a
 	ld a,c
 	and 00000011B
-	ld b,a
-	rrca
-	rrca
-	or b
-	ld d,a
-	ld h,SLTTBL >> 8
-	ld a,SLTTBL & 0FFH
-	add a,b
-	ld l,a
-	in a,(0A8H)
 	ld c,a
-	and 00111100B
+	ld d,a
+	rrca
+	rrca
+	ex de,hl
+	ld e,11111100B
+	bit 7,d
+	jr z,ShiftContinue
+	add hl,hl
+	add hl,hl
+	add hl,hl
+	add hl,hl
+	ld e,11001111B
+ShiftContinue:
+	bit 6,d
+	jr z,ShiftDone
+	add hl,hl
+	add hl,hl
+	rlc e
+	rlc e
+ShiftDone:
+	ex de,hl
 	or d
+	ld b,d
 	ld d,a
-	ld a,c
-	and 11111100B
-	or b
-	ld b,a
-	ld a,(hl)
-	and 11111100B
-	or e
-	ld e,a
-	ld c,l
-	ret
-	ENDP
-
-;
-; Prepares a slot selection in page 1.
-;
-; a = slot ID formatted FxxxSSPP
-; bc <- prepared slot id (1) (b: primary value, c: SLTTBL LSB)
-; de <- prepared slot id (2) (d: secondary’s primary value, e: secondary value)
-; hl <- SLTTBL entry
-; Modifies: af, bc, de, hl
-;
-Memory_PrepareSlotPage1: PROC
-	and a
-	jp m,Expanded
-	call Expanded
-	ld a,d
-	and 00111111B  ; writing to 0FFFFH in slot 0 should be safe
-	ld d,a
-	ld a,(SLTTBL)
-	ld e,a
-	ld c,SLTTBL & 0FFH
-	ret
-Expanded:
-	ld c,a
-	and 00001100B
-	ld e,a
-	ld a,c
-	and 00000011B
-	ld c,a
-	rlca
-	rlca
-	ld b,a
-	rlca
-	rlca
-	rlca
-	rlca
-	or b
-	ld d,a
+	push hl
 	ld h,SLTTBL >> 8
 	ld a,SLTTBL & 0FFH
 	add a,c
 	ld l,a
-	in a,(0A8H)
-	ld c,a
-	and 00110011B
-	or d
-	ld d,a
-	ld a,c
-	and 11110011B
-	or b
-	ld b,a
 	ld a,(hl)
-	and 11110011B
+	ex (sp),hl
+	and l
 	or e
 	ld e,a
-	ld c,l
-	ret
-	ENDP
-
-;
-; Prepares a slot selection in page 2.
-;
-; a = slot ID formatted FxxxSSPP
-; bc <- prepared slot id (1) (b: primary value, c: SLTTBL LSB)
-; de <- prepared slot id (2) (d: secondary’s primary value, e: secondary value)
-; hl <- SLTTBL entry
-; Modifies: af, bc, de, hl
-;
-Memory_PrepareSlotPage2: PROC
-	and a
-	jp m,Expanded
-	call Expanded
-	ld a,d
-	and 00111111B  ; writing to 0FFFFH in slot 0 should be safe
-	ld d,a
-	ld a,(SLTTBL)
-	ld e,a
-	ld c,SLTTBL & 0FFH
-	ret
-Expanded:
-	ld c,a
-	and 00001100B
-	rlca
-	rlca
-	ld e,a
-	ld a,c
-	and 00000011B
-	ld c,a
-	rlca
-	rlca
-	rlca
-	rlca
-	ld b,a
-	rlca
-	rlca
-	or b
-	ld d,a
-	ld h,SLTTBL >> 8
-	ld a,SLTTBL & 0FFH
-	add a,c
-	ld l,a
 	in a,(0A8H)
-	ld c,a
-	and 00001111B
+	ld h,a
+	and l
+	or b
+	ld b,a
+	ld a,h
+	res 6,l
+	res 7,l
+	and l
 	or d
 	ld d,a
-	ld a,c
-	and 11001111B
-	or b
-	ld b,a
-	ld a,(hl)
-	and 11001111B
-	or e
-	ld e,a
+	pop hl
 	ld c,l
 	ret
 	ENDP
