@@ -260,61 +260,25 @@ Memory_WriteSlot:
 	ei
 	ret
 
-;
 ; Executes an inter-slot call.
 ; The current interrupt enabled state is preserved.
-;
 ; iyh = slot ID
 ; ix = address
 ; Modifies: af', bc', de', hl'
-;
-Memory_CallSlot: PROC
-	ex af,af'
+Memory_CallSlot:
+	ld b,a
+	call System_CheckEIState
+	push af
+	ld a,b
+	call WRSLT
 	exx
-	ld a,ixh
-	ld h,a
-	and 11000000B
-	ld a,iyh
-	jp z,Page0
-	call Memory_PrepareSlot
-	call Memory_SetPreparedSlot
-	push bc
-	push de
+	ld b,a
+	pop af
 	exx
-	ex af,af'
-	call JumpIX
-	ex af,af'
-	exx
-	pop de
-	pop bc
-	call Memory_SetPreparedSlot
-	exx
-	ex af,af'
+	ld a,b
+	ret po
+	ei
 	ret
-
-	SECTION TPA_PAGE1
-Page0:
-	call Memory_PrepareSlot
-	call Memory_SetPreparedSlotPage0
-	push bc
-	push de
-	exx
-	ex af,af'
-	call JumpIX
-	ex af,af'
-	exx
-	pop de
-	pop bc
-	call Memory_SetPreparedSlotPage0
-	exx
-	ex af,af'
-	ret
-JumpIX:
-	jp ix
-	ENDS
-	ENDP
-
-	ENDS
 
 ;
 ; Search all slots and subslots for a match.
