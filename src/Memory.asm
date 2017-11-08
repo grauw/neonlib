@@ -243,89 +243,22 @@ Memory_ReadSlot:
 	ei
 	ret
 
-;
 ; Writes a byte to a slot.
 ; The current interrupt enabled state is preserved.
-;
 ; a = slot ID
-; c = value
-; hl = address
-; Modifies: af, af', bc, de
-;
+; e = value
+; hl = address (00H <= h < C0H)
+; Modifies: af, bc, d
 Memory_WriteSlot:
-	push bc
-	push hl
-	call Memory_PrepareSlot
-	pop hl
-	pop bc
-	bit 7,h
-	jp nz,Memory_WritePreparedSlot
-	bit 6,h
-	jp nz,Memory_WritePreparedSlot
-	jp Memory_WritePreparedSlotPage0
-
-;
-; Writes a byte to a prepared slot.
-; The current interrupt enabled state is preserved.
-;
-; c = value
-; de = prepared slot id (2)
-; hl = address
-; Modifies: af, af', bc, de
-;
-Memory_WritePreparedSlot:
+	ld b,a
 	call System_CheckEIState
-	ld a,c
-	ld c,0A8H
-	ex af,af'
-	di
-	in b,(c)
-	out (c),d
-	ld a,(0FFFFH)
-	cpl
-	ld d,a
-	ld a,e
-	ld (0FFFFH),a
-	ex af,af'
-	ld (hl),a
-	ld a,d
-	ld (0FFFFH),a
-	out (c),b
+	push af
+	ld a,b
+	call WRSLT
+	pop af
 	ret po
 	ei
 	ret
-
-	SECTION TPA_PAGE1
-
-;
-; Writes a byte to a prepared slot in page 0.
-; See WritePreparedSlot.
-;
-Memory_WritePreparedSlotPage0:
-	call System_CheckEIState
-	ld a,c
-	ld c,0A8H
-	ex af,af'
-	di
-	in b,(c)
-	out (c),d
-	ld a,(0FFFFH)
-	cpl
-	ld d,a
-	ld a,e
-	ld (0FFFFH),a
-	ex af,af'
-	ld (hl),a
-	ld a,d
-	ld (0FFFFH),a
-	out (c),b
-	ret po
-	ei
-	ret
-
-	ENDS
-
-	SECTION RAM
 
 ;
 ; Executes an inter-slot call.
