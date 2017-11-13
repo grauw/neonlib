@@ -108,6 +108,7 @@ System_ReadBIOS_Interslot:
 	push de
 	ld a,(EXPTBL)
 	call RDSLT
+	ei
 	pop de
 	pop bc
 	ret
