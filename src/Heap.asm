@@ -72,27 +72,41 @@ Heap_GetRootBlock:
 ;
 ; ix = this
 ; bc = space
+; bc <- space
+; de <- previous block
+; hl <- offset (= 0)
 ; f <- c: can allocate
 ; Modifies: af, bc, de, hl, ix
 ;
-Heap_CanAllocate: PROC
+Heap_CanAllocate:
 	call Heap_GetRootBlock
 	call Heap_RoundBC
-Loop:
-	ld e,(ix + HeapBlock.next)
-	ld d,(ix + HeapBlock.next + 1)
-	ld a,e
-	or d       ; if end reached (null pointer)
-	ret z
-	ld ixl,e
-	ld ixh,d
-	ld l,(ix + HeapBlock.space)
-	ld h,(ix + HeapBlock.space + 1)
-	sbc hl,bc
-	jp c,Loop
-	scf
+	push iy
+	ld iy,HeapBlock_MatchDefault
+	call HeapBlock_MatchNext
+	pop iy
 	ret
-	ENDP
+
+;
+; Check whether the specified space can be allocated on an aligned address.
+; I.e. whether a subsequent Allocate call will fail or no.
+;
+; ix = this
+; bc = space
+; bc <- space
+; de <- previous block
+; hl <- offset
+; f <- c: can allocate
+; Modifies: af, bc, de, hl, ix
+;
+Heap_CanAllocateAligned:
+	call Heap_GetRootBlock
+	call Heap_RoundBC
+	push iy
+	ld iy,HeapBlock_MatchAligned
+	call HeapBlock_MatchNext
+	pop iy
+	ret
 
 ;
 ; Get the total amount of free heap space.
@@ -102,25 +116,14 @@ Loop:
 ; bc <- space
 ; Modifies: af, bc, d, ix
 ;
-Heap_GetFreeSpace: PROC
+Heap_GetFreeSpace:
 	call Heap_GetRootBlock
 	ld bc,0
-Loop:
-	ld e,(ix + HeapBlock.next)
-	ld d,(ix + HeapBlock.next + 1)
-	ld a,e
-	or d       ; if end reached (null pointer)
-	ret z
-	ld ixl,e
-	ld ixh,d
-	ld a,c
-	add a,(ix + HeapBlock.space)
-	ld c,a
-	ld a,b
-	adc a,(ix + HeapBlock.space + 1)
-	ld b,a
-	jp Loop
-	ENDP
+	push iy
+	ld iy,HeapBlock_MatchAddFreeSpace
+	call HeapBlock_MatchNext
+	pop iy
+	ret
 
 ;
 ; Allocate a block of memory on the heap.
@@ -132,25 +135,74 @@ Loop:
 ; Modifies: af, bc, de, hl, ix
 ; Throws out of memory exception
 ;
-Heap_Allocate: PROC
-	call Heap_GetRootBlock
-	call Heap_RoundBC
-	push de    ; dummy value
-Loop:
-	pop de     ; discard last value
-	push ix
-	ld e,(ix + HeapBlock.next)
-	ld d,(ix + HeapBlock.next + 1)
-	ld a,e
-	or d       ; if end reached (null pointer)
-	jr z,Throw
+Heap_Allocate:
+	call Heap_CanAllocate
+	call nc,Heap_ThrowOutOfHeapException
+	jp HeapBlock_Allocate
+
+;
+; Allocate a block of memory on the heap on an aligned address.
+;
+; ix = this
+; bc = number of bytes to allocate
+; bc <- allocated space
+; de <- allocated memory address
+; Modifies: af, bc, de, hl, ix
+; Throws out of memory exception
+Heap_AllocateAligned:
+	call Heap_CanAllocateAligned
+	call nc,Heap_ThrowOutOfHeapException
+	jp HeapBlock_Allocate
+
+;
+Heap_ThrowOutOfHeapException:
+	ld hl,Heap_outOfHeapException
+	jp System_ThrowExceptionWithMessage
+
+; bc = space
+; de = previous block
+; hl = offset
+; ix = this
+; bc <- allocated space
+; de <- allocated memory address
+; Modifies: af, bc, de, hl, ix
+; Throws out of memory exception
+HeapBlock_Allocate: PROC
+	ld a,l
+	or h
+	jr z,NoOffset
+Split:
+	ex de,hl
+	ld l,(ix + HeapBlock.space)
+	ld h,(ix + HeapBlock.space + 1)
+	sbc hl,de
+	push hl
+	ld (ix + HeapBlock.space),e
+	ld (ix + HeapBlock.space + 1),d
+	ex de,hl
+	ld e,ixl
+	ld d,ixh
+	push de
+	add hl,de
+	ex de,hl
+	ld l,(ix + HeapBlock.next)
+	ld h,(ix + HeapBlock.next + 1)
+	ld (ix + HeapBlock.next),e
+	ld (ix + HeapBlock.next + 1),d
 	ld ixl,e
 	ld ixh,d
+	pop de
+	ld (ix + HeapBlock.next),l
+	ld (ix + HeapBlock.next + 1),h
+	pop hl
+	ld (ix + HeapBlock.space),l
+	ld (ix + HeapBlock.space + 1),h
+NoOffset:
+	push de
 	ld l,(ix + HeapBlock.space)
 	ld h,(ix + HeapBlock.space + 1)
 	sbc hl,bc
-	jp c,Loop
-	jp z,ExactFit
+	jr z,ExactFit
 Fit:
 	ld e,(ix + HeapBlock.next)
 	ld d,(ix + HeapBlock.next + 1)
@@ -174,9 +226,6 @@ ExactFit:
 	ld (ix + HeapBlock.next),l
 	ld (ix + HeapBlock.next + 1),h
 	ret
-Throw:
-	ld hl,Heap_outOfHeapException
-	jp System_ThrowExceptionWithMessage
 	ENDP
 
 ;
@@ -185,10 +234,29 @@ Throw:
 ; a = clear value
 ; Remaining parameters are the same as Allocate
 ;
-Heap_AllocateClear: PROC
+Heap_AllocateClear:
 	push af
 	call Heap_Allocate
 	pop af
+	jp Heap_ClearSpace
+
+;
+; Allocates on an aligned address, then clears the allocated space.
+;
+; a = clear value
+; Remaining parameters are the same as AllocateAligned
+;
+Heap_AllocateAlignedClear:
+	push af
+	call Heap_Allocate
+	pop af
+	jp Heap_ClearSpace
+
+; a = clear value
+; bc <- allocated space
+; de <- allocated memory address
+; Modifies: af, hl
+Heap_ClearSpace: PROC
 	push bc
 	push de
 	ld l,e
@@ -403,6 +471,81 @@ Heap_RoundBC:
 	ld c,a
 	inc bc
 	ret
+
+; ix = this
+; iy = matcher (de = previous block, hl / ix = current block)
+; ix <- block
+; f <- z, nc: end reached
+; Modifies: af, bc, de, hl, ix
+HeapBlock_MatchNext:
+	ld l,(ix + HeapBlock.next)
+	ld h,(ix + HeapBlock.next + 1)
+	ld a,l
+	or h       ; if end reached (null pointer)
+	ret z
+	ld e,ixl
+	ld d,ixh
+	ex de,hl
+	ld ixl,e
+	ld ixh,d
+	ex de,hl
+	jp iy
+
+; bc = space
+; de = previous block
+; hl = this
+; ix = this
+; bc <- space
+; de <- previous block
+; hl <- offset
+; f <- c: can allocate
+HeapBlock_MatchDefault:
+	ld l,(ix + HeapBlock.space)
+	ld h,(ix + HeapBlock.space + 1)
+	and a
+	sbc hl,bc
+	jr c,HeapBlock_MatchNext
+	ld hl,0
+	scf
+	ret
+
+; bc = space
+; de = previous block
+; hl = this
+; ix = this
+; bc <- space
+; de <- previous block
+; hl <- offset
+; f <- c: can allocate
+HeapBlock_MatchAligned:
+	push de
+	xor a
+	ld d,a
+	sub l
+	ld e,a
+	ld l,(ix + HeapBlock.space)
+	ld h,(ix + HeapBlock.space + 1)
+	and a
+	sbc hl,de
+	pop de
+	jr c,HeapBlock_MatchNext
+	sbc hl,bc
+	jr c,HeapBlock_MatchNext
+	ld l,a
+	ld h,0
+	scf
+	ret
+
+; bc = space
+; ix = this
+; bc <- new space
+HeapBlock_MatchAddFreeSpace:
+	ld l,(ix + HeapBlock.space)
+	ld h,(ix + HeapBlock.space + 1)
+	add hl,bc
+	ld c,l
+	ld b,h
+	jr HeapBlock_MatchNext
 
 ;
 Heap_outOfHeapException:
