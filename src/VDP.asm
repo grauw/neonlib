@@ -297,13 +297,17 @@ Wait:
 	jp p,Wait            ; wait until interrupt flag is set
 	ld a,2               ; select s#2 on V9938
 	out (VDP_PORT_1),a
-	ld a,15 + 128
+	ld a,15 + 128        ; (this mirrors to r#7 on TMS9918 VDPs)
 	out (VDP_PORT_1),a
 	in a,(VDP_PORT_1)    ; read s#2 / s#0
 	ex af,af'
 	xor a                ; select s#0 as required by BIOS
 	out (VDP_PORT_1),a
 	ld a,15 + 128
+	out (VDP_PORT_1),a
+	ld a,(VDP_MIRROR_0 + 7)
+	out (VDP_PORT_1),a   ; restore r#7 if it mirrored (small flicker visible)
+	ld a,7 + 128
 	ei
 	out (VDP_PORT_1),a
 	ex af,af'
