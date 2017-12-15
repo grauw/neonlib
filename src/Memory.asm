@@ -207,10 +207,10 @@ Memory_SetPreparedSlotPage0:
 	ret
 
 ; Disables interrupts.
-; e <= original secondary slot register value (negated)
-; b <= original primary slot register value
-; c <= A8H
-; hl <= FFFFH
+; e <- original secondary slot register value (negated)
+; b <- original primary slot register value
+; c <- A8H
+; hl <- FFFFH
 ; Modifies: bc, e, hl
 Memory_AccessPreparedSlot_BEGIN: MACRO
 	ld c,0A8H
