@@ -58,6 +58,14 @@ Heap_Construct:
 	ld (hl),0
 	ret
 
+; ix = this
+; ix <- root block
+Heap_GetRootBlock:
+	call Heap_CheckIntegrity
+	ld de,Heap.rootBlock
+	add ix,de
+	ret
+
 ;
 ; Check whether the specified space can be allocated.
 ; I.e. whether a subsequent Allocate call will fail or no.
@@ -68,10 +76,8 @@ Heap_Construct:
 ; Modifies: af, bc, de, hl, ix
 ;
 Heap_CanAllocate: PROC
-	call Heap_CheckIntegrity
+	call Heap_GetRootBlock
 	call Heap_RoundBC
-	ld de,Heap.rootBlock
-	add ix,de
 Loop:
 	ld e,(ix + HeapBlock.next)
 	ld d,(ix + HeapBlock.next + 1)
@@ -97,10 +103,8 @@ Loop:
 ; Modifies: af, bc, d, ix
 ;
 Heap_GetFreeSpace: PROC
-	call Heap_CheckIntegrity
+	call Heap_GetRootBlock
 	ld bc,0
-	ld de,Heap.rootBlock
-	add ix,de
 Loop:
 	ld e,(ix + HeapBlock.next)
 	ld d,(ix + HeapBlock.next + 1)
@@ -129,10 +133,8 @@ Loop:
 ; Throws out of memory exception
 ;
 Heap_Allocate: PROC
-	call Heap_CheckIntegrity
+	call Heap_GetRootBlock
 	call Heap_RoundBC
-	ld de,Heap.rootBlock
-	add ix,de
 	push de    ; dummy value
 Loop:
 	pop de     ; discard last value
@@ -215,11 +217,9 @@ Skip:
 ; Modifies: af, bc, de, hl, ix
 ;
 Heap_Free: PROC
-	call Heap_CheckIntegrity
 	ex de,hl   ; hl = memory address
+	call Heap_GetRootBlock
 	call Heap_RoundBC
-	ld de,Heap.rootBlock
-	add ix,de
 Loop:
 	ld e,(ix + HeapBlock.next)
 	ld d,(ix + HeapBlock.next + 1)
