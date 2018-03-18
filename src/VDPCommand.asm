@@ -90,6 +90,89 @@ WaitReady:
 	ret
 	ENDP
 
+; ix = this
+; c <- transfer port
+; Modifies: af, b, hl
+VDPCommand_ExecuteEasyXMMC:
+	push ix
+	pop hl
+	jp VDPCommand_ExecuteEasyXMMC_HL
+
+; iy = this
+; c <- transfer port
+; Modifies: af, b, hl
+VDPCommand_ExecuteEasyXMMC_IY:
+	push iy
+	pop hl
+	jp VDPCommand_ExecuteEasyXMMC_HL
+
+; Executes HMMC / LMMC commands without the first colour value.
+; hl = this
+; c <- transfer port
+; Modifies: af, b, hl
+VDPCommand_ExecuteEasyXMMC_HL: PROC
+	ld c,VDP_PORT_3
+	ld a,36  ; no need to set SX
+	di
+	out (VDP_PORT_1),a
+	ld a,17 | 128
+	ei
+	out (VDP_PORT_1),a
+WaitReady:
+	ld a,2
+	di
+	out (VDP_PORT_1),a  ; select s#2
+	ld a,15 | 128
+	out (VDP_PORT_1),a
+	in a,(VDP_PORT_1)
+	rra
+	ld a,0
+	out (VDP_PORT_1),a  ; select s#0
+	ld a,15 | 128
+	ei
+	out (VDP_PORT_1),a
+	jr c,WaitReady
+	ld a,VDPCommand_LMCM
+	di
+	out (VDP_PORT_1),a  ; LMCM to empty CLR buffer (sets TR)
+	ld a,46 | 128
+	ei
+	out (VDP_PORT_1),a
+	ld a,VDPCommand_STOP
+	di
+	out (VDP_PORT_1),a  ; STOP to avoid an occasional hang
+	ld a,46 | 128
+	ei
+	out (VDP_PORT_1),a
+	ld de,4
+	add hl,de  ; no need to set SX
+	outi
+	outi
+	outi
+	outi
+	outi
+	outi
+	outi
+	outi
+	inc hl
+	ld a,45  ; 8 + 5 + 12 + 8 + 5 + 12 + 18 + 18
+	di
+	out (VDP_PORT_1),a  ; skip CLR to keep buffer empty
+	ld a,17 | 128
+	ei
+	out (VDP_PORT_1),a
+	outi
+	outi
+	ld a,44 | 128
+	di
+	out (VDP_PORT_1),a
+	ld a,17 | 128
+	ei
+	out (VDP_PORT_1),a
+	ld c,VDP_PORT_3
+	ret
+	ENDP
+
 ; Modifies: af
 VDPCommand_WaitReady:
 	call VDPCommand_IsReady
