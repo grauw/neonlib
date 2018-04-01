@@ -29,7 +29,12 @@ Palette_Set:
 	ld b,16
 	call VDP_SetRegister
 	ld c,VDP_PORT_2
+	call System_CheckEIState
+	push af
 	REPT 32
 	outi
 	ENDM
+	pop af
+	ret po
+	ei
 	ret
