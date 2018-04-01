@@ -261,7 +261,7 @@ VDP_GetVersion:
 	ld a,1               ; select s#1
 	di
 	out (VDP_PORT_1),a
-	ld a,15 + 128
+	ld a,15 | VDP_REGISTER
 	out (VDP_PORT_1),a
 	in a,(VDP_PORT_1)    ; read s#1
 	and 00111110B        ; get VDP ID
@@ -269,7 +269,7 @@ VDP_GetVersion:
 	ex af,af'
 	xor a                ; select s#0 as required by BIOS
 	out (VDP_PORT_1),a
-	ld a,15 + 128
+	ld a,15 | VDP_REGISTER
 	ei
 	out (VDP_PORT_1),a
 	ex af,af'
@@ -297,17 +297,17 @@ Wait:
 	jp p,Wait            ; wait until interrupt flag is set
 	ld a,2               ; select s#2 on V9938
 	out (VDP_PORT_1),a
-	ld a,15 + 128        ; (this mirrors to r#7 on TMS9918 VDPs)
+	ld a,15 | VDP_REGISTER        ; (this mirrors to r#7 on TMS9918 VDPs)
 	out (VDP_PORT_1),a
 	in a,(VDP_PORT_1)    ; read s#2 / s#0
 	ex af,af'
 	xor a                ; select s#0 as required by BIOS
 	out (VDP_PORT_1),a
-	ld a,15 + 128
+	ld a,15 | VDP_REGISTER
 	out (VDP_PORT_1),a
 	ld a,(VDP_MIRROR_0 + 7)
 	out (VDP_PORT_1),a   ; restore r#7 if it mirrored (small flicker visible)
-	ld a,7 + 128
+	ld a,7 | VDP_REGISTER
 	ei
 	out (VDP_PORT_1),a
 	ex af,af'

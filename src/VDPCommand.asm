@@ -67,20 +67,20 @@ VDPCommand_Execute_HL: PROC
 	ld a,32
 	di
 	out (VDP_PORT_1),a
-	ld a,17 | 128
+	ld a,17 | VDP_REGISTER
 	ei
 	out (VDP_PORT_1),a
 WaitReady:
 	ld a,2
 	di
 	out (VDP_PORT_1),a  ; select s#2
-	ld a,15 | 128
+	ld a,15 | VDP_REGISTER
 	out (VDP_PORT_1),a
 	in a,(VDP_PORT_1)
 	rra
 	ld a,0
 	out (VDP_PORT_1),a  ; select s#0
-	ld a,15 | 128
+	ld a,15 | VDP_REGISTER
 	ei
 	out (VDP_PORT_1),a
 	jr c,WaitReady
@@ -185,13 +185,13 @@ VDPCommand_IsReady:
 	ld a,2
 	di
 	out (VDP_PORT_1),a  ; select s#2
-	ld a,15 | 128
+	ld a,15 | VDP_REGISTER
 	out (VDP_PORT_1),a
 	in a,(VDP_PORT_1)
 	rra
 	ld a,0
 	out (VDP_PORT_1),a  ; select s#0
-	ld a,15 | 128
+	ld a,15 | VDP_REGISTER
 	ei
 	out (VDP_PORT_1),a
 	ret
@@ -204,20 +204,20 @@ VDPCommand_PrepareCommand:
 	add a,32
 	di
 	out (VDP_PORT_1),a
-	ld a,17 | 128
+	ld a,17 | VDP_REGISTER
 	ei
 	out (VDP_PORT_1),a
 WaitReady:
 	ld a,2
 	di
 	out (VDP_PORT_1),a  ; select s#2
-	ld a,15 | 128
+	ld a,15 | VDP_REGISTER
 	out (VDP_PORT_1),a
 	in a,(VDP_PORT_1)
 	rra
 	ld a,0
 	out (VDP_PORT_1),a  ; select s#0
-	ld a,15 | 128
+	ld a,15 | VDP_REGISTER
 	ei
 	out (VDP_PORT_1),a
 	jr c,WaitReady
@@ -230,7 +230,7 @@ VDPCommand_PrepareTransfer:
 	ld a,44 | 128
 	di
 	out (VDP_PORT_1),a
-	ld a,17 | 128
+	ld a,17 | VDP_REGISTER
 	ei
 	out (VDP_PORT_1),a
 	ret
@@ -248,7 +248,7 @@ VDPCommand_Transfer: PROC
 	ld a,44 | 128
 	di
 	out (VDP_PORT_1),a
-	ld a,17 | 128
+	ld a,17 | VDP_REGISTER
 	ei
 	out (VDP_PORT_1),a
 Loop:
@@ -270,13 +270,13 @@ VDPCommand_IsTransferReady:
 	ld a,2
 	di
 	out (VDP_PORT_1),a  ; select s#2
-	ld a,15 | 128
+	ld a,15 | VDP_REGISTER
 	out (VDP_PORT_1),a
 	in a,(VDP_PORT_1)
 	rla
 	ld a,0
 	out (VDP_PORT_1),a  ; select s#0
-	ld a,15 | 128
+	ld a,15 | VDP_REGISTER
 	ei
 	out (VDP_PORT_1),a
 	ret
