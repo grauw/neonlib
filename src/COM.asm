@@ -39,6 +39,7 @@ COM_Main:
 	INCLUDE "VDP.asm"
 	INCLUDE "VDPCommand.asm"
 	INCLUDE "Palette.asm"
+	INCLUDE "Hook.asm"
 	INCLUDE "Application.asm"
 	INCLUDE "Reader.asm"
 	INCLUDE "Writer.asm"
