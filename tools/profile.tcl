@@ -118,10 +118,9 @@ namespace eval profile {
 			return
 		}
 		variable slots
-		variable index 0
 		foreach slotid [dict keys $slots] {
 			slot_with $slotid {
-				variable index
+				set index [expr {$slotid eq {x} ? 0 : [expr $slotid + 1]}]
 				variable width
 				variable height
 				variable frame_total_time
@@ -138,8 +137,6 @@ namespace eval profile {
 				osd configure profile.$slotid -x [expr ($index * $height / 240) * $width] -y [expr $index * $height % 240]
 				osd configure profile.$slotid.bar -w [expr ($fraction < 0 ? 0 : $fraction > 1 ? 1 : $fraction) * $width]
 				osd configure profile.$slotid.text -text [format "%s: %05.2f%%" $slotid [expr $fraction * 100]] 
-				
-				incr index
 			}
 		}
 	}
