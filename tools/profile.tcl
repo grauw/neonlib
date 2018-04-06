@@ -24,9 +24,11 @@
 # number. This section is treated as a frame delimiter, every time this section
 # starts all section times are reset.
 #
-# Use the “profile_osd” command to show the on-screen display of the current
-# frame time. Use the “profile” command to show the detailed current profiling
-# status in the console.
+# Console commands:
+#
+# profile_osd - show the on-screen display of the current frame time.
+# profile_ms - toggle the OSD values between percentage and milliseconds.
+# profile - show the detailed current profiling status in the console.
 #
 # Legend: the “frame” value indicates the time spent in the last frame, the
 # “current” value shows the currently accumulated time, the “count” value shows
@@ -40,6 +42,7 @@ namespace eval profile {
 	variable frame_total_time 0
 	variable width 32
 	variable height 8
+	variable percent true
 	
 	debug set_watchpoint read_io 0x2C {} {
 		profile::slot_begin [expr $::wp_last_address >> 8] [machine_info time]
@@ -124,6 +127,7 @@ namespace eval profile {
 				variable width
 				variable height
 				variable frame_total_time
+				variable percent
 				
 				set fraction [expr $frame_total_time != 0 ? $frame_time / $frame_total_time : 0]
 				
@@ -136,7 +140,12 @@ namespace eval profile {
 				
 				osd configure profile.$slotid -x [expr ($index * $height / 240) * $width] -y [expr $index * $height % 240]
 				osd configure profile.$slotid.bar -w [expr ($fraction < 0 ? 0 : $fraction > 1 ? 1 : $fraction) * $width]
-				osd configure profile.$slotid.text -text [format "%s: %05.2f%%" $slotid [expr $fraction * 100]] 
+				
+				if {$percent} {
+					osd configure profile.$slotid.text -text [format "%s: %00.2f%%" $slotid [expr $fraction * 100]]
+				} else {
+					osd configure profile.$slotid.text -text [format "%s: %.2f ms" $slotid [expr $frame_time * 1000]]
+				}
 			}
 		}
 	}
@@ -186,8 +195,15 @@ namespace eval profile {
 		return
 	}
 	
+	proc profile_ms {} {
+		variable percent
+		set percent [expr !$percent]
+		return
+	}
+	
 	namespace export profile
 	namespace export profile_osd
+	namespace export profile_ms
 }
 
 namespace import profile::*
