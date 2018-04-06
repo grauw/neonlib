@@ -363,6 +363,16 @@ System_CheckEIState:
 System_Return:
 	ret
 
+; bc = jump address
+System_JumpBC:
+	push bc
+	ret
+
+; de = jump address
+System_JumpDE:
+	push de
+	ret
+
 ; hl = jump address
 System_JumpHL:
 	jp hl
