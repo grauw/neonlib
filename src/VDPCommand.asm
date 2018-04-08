@@ -199,7 +199,7 @@ VDPCommand_IsReady:
 ; a = start register offset
 ; c <- command port
 ; Modifies: af
-VDPCommand_PrepareCommand:
+VDPCommand_PrepareCommand: PROC
 	ld c,VDP_PORT_3
 	add a,32
 	di
@@ -222,6 +222,7 @@ WaitReady:
 	out (VDP_PORT_1),a
 	jr c,WaitReady
 	ret
+	ENDP
 
 ; c <- transfer port
 ; Modifies: af
