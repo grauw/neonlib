@@ -138,11 +138,9 @@ ShiftDone:
 Memory_SetSlot:
 	ld b,a
 	call System_CheckEIState
-	push af
 	ld a,b
+	jp po,ENASLT
 	call ENASLT
-	pop af
-	ret po
 	ei
 	ret
 
@@ -279,13 +277,9 @@ Memory_CheckEIState_Page1:
 Memory_ReadSlot:
 	ld b,a
 	call System_CheckEIState
-	push af
 	ld a,b
+	jp po,RDSLT
 	call RDSLT
-	ld b,a
-	pop af
-	ld a,b
-	ret po
 	ei
 	ret
 
@@ -298,11 +292,9 @@ Memory_ReadSlot:
 Memory_WriteSlot:
 	ld b,a
 	call System_CheckEIState
-	push af
 	ld a,b
+	jp po,WRSLT
 	call WRSLT
-	pop af
-	ret po
 	ei
 	ret
 
