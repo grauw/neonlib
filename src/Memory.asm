@@ -311,20 +311,18 @@ Memory_WriteSlot:
 ; iyh = slot ID
 ; ix = address
 ; Modifies: af', bc', de', hl'
-Memory_CallSlot:
-	ld b,a
-	call System_CheckEIState
+Memory_CallSlot: PROC
 	push af
-	ld a,b
-	call WRSLT
-	exx
-	ld b,a
+	call System_CheckEIState
+	jp po,InterruptsDisabled
 	pop af
-	exx
-	ld a,b
-	ret po
+	call CALSLT
 	ei
 	ret
+InterruptsDisabled:
+	pop af
+	jp CALSLT
+	ENDP
 
 ;
 ; Search all slots and subslots for a match.
