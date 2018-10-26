@@ -48,6 +48,7 @@ Reader_Construct:
 	ld (ix + Reader.bufferPosition),l
 	ld (ix + Reader.bufferPosition + 1),h
 	ld (ix + Reader.fillPending),-1
+	ld (ix + Reader.bits),0
 	ld e,ixl
 	ld d,ixh
 	ret

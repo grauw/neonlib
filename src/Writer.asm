@@ -58,6 +58,10 @@ Writer_Construct:
 	dec h
 	dec h
 	ld (ix + Writer.bufferEndCopyMargin),h
+	ld (ix + Writer.count),0
+	ld (ix + Writer.count + 1),0
+	ld (ix + Writer.count + 2),0
+	ld (ix + Writer.count + 3),0
 	ld e,ixl
 	ld d,ixh
 	ret
