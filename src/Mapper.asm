@@ -44,6 +44,14 @@ Mapper: MACRO
 		jp 0
 	ENDM
 
+MapperSegment: MACRO
+	segment:
+		db 0
+	slot:
+		db 0
+	_size:
+	ENDM
+
 ; ix = this
 ; ix <- this
 Mapper_Construct:
