@@ -273,8 +273,7 @@ DOS_MoveFileHandlePointer:
 ; a <- error
 DOS_SetFileHandlePointer:
 	ld a,0
-	call DOS_MoveFileHandlePointer
-	ret
+	jp DOS_MoveFileHandlePointer
 
 ; b = file handle
 ; a <- error
@@ -283,8 +282,7 @@ DOS_GetFileHandlePointer:
 	ld hl,0
 	ld de,0
 	ld a,1
-	call DOS_MoveFileHandlePointer
-	ret
+	jp DOS_MoveFileHandlePointer
 
 DOS_ParsePathname:
 	ld c,_PARSE
