@@ -198,12 +198,50 @@ GET_P3:   equ 2DH
 .COPY:    equ 082H
 .OVDEST:  equ 081H
 
+FileInfoBlock: MACRO
+	marker:
+		db 0FFH
+	name:
+		ds 14
+	attributes:
+		db 0
+	lastModificationTime:
+		dw 0
+	lastModificationDate:
+		dw 0
+	startCluster:
+		dw 0
+	fileSize:
+		dd 0
+	logicalDrive:
+		db 0
+	internal:
+		ds 38
+	ENDM
+
+; ix = this
+; hl <- file name
+FileInfoBlock_GetName:
+	ld e,ixl
+	ld d,ixh
+	ld hl,FileInfoBlock.name
+	add hl,de
+	ret
+
 DOS_ConsoleInputWithoutEcho:
 	ld c,_INNOE
 	jp BDOS
 
 DOS_ConsoleStatus:
 	ld c,_CONST
+	jp BDOS
+
+DOS_FindFirstEntry:
+	ld c,_FFIRST
+	jp BDOS
+
+DOS_FindNextEntry:
+	ld c,_FNEXT
 	jp BDOS
 
 DOS_OpenFileHandle:
