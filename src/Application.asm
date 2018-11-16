@@ -52,10 +52,3 @@ Application_dos2RequiredError:
 
 Application_insufficientTPAError:
 	db "Insufficient TPA space.",13,10,0
-
-	SECTION RAM
-
-Application_explainBuffer:
-	ds 64,0
-
-	ENDS
