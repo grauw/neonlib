@@ -228,42 +228,89 @@ FileInfoBlock_GetName:
 	add hl,de
 	ret
 
+; a <- character
+; l <- character
 DOS_ConsoleInputWithoutEcho:
 	ld c,_INNOE
 	jp BDOS
 
+; a <- 0: no key pressed, -1: key pressed
+; l <- 0: no key pressed, -1: key pressed
 DOS_ConsoleStatus:
 	ld c,_CONST
 	jp BDOS
 
+; b = search attributes
+; de = path string or file info block
+; hl = filename string (only if de is FIB)
+; ix = new file info block
+; ix <- new file info block
+; a <- error
+; f <- nz: error
 DOS_FindFirstEntry:
 	ld c,_FFIRST
 	jp BDOS
 
+; ix = new file info block
+; ix <- new file info block
+; a <- error
+; f <- nz: error
 DOS_FindNextEntry:
 	ld c,_FNEXT
 	jp BDOS
 
+; a = open mode (bit 0: no write, bit 1: no read, bit 2: inheritable)
+; de = path string or file info block
+; a <- error
+; f <- nz: error
+; b <- file handle
 DOS_OpenFileHandle:
 	ld c,_OPEN
 	jp BDOS
 
+; a = open mode (bit 0: no write, bit 1: no read, bit 2: inheritable)
+; b = attributes (bit 7: create new flag)
+; de = path string or file info block
+; a <- error
+; f <- nz: error
+; b <- file handle
 DOS_CreateFileHandle:
 	ld c,_CREATE
 	jp BDOS
 
+; b = file handle
+; a <- error
+; f <- nz: error
 DOS_CloseFileHandle:
 	ld c,_CLOSE
 	jp BDOS
 
+; b = file handle
+; de = destination buffer
+; hl = number of bytes to read
+; a <- error
+; f <- nz: error
+; hl <- number of bytes actually read
 DOS_ReadFromFileHandle:
 	ld c,_READ
 	jp BDOS
 
+; b = file handle
+; de = source buffer
+; hl = number of bytes to write
+; a <- error
+; f <- nz: error
+; hl <- number of bytes actually written
 DOS_WriteToFileHandle:
 	ld c,_WRITE
 	jp BDOS
 
+; a = method code
+; b = file handle
+; dehl = signed offset
+; a <- error
+; f <- nz: error
+; dehl <- new file pointer
 DOS_MoveFileHandlePointer:
 	ld c,_SEEK
 	jp BDOS
@@ -271,12 +318,15 @@ DOS_MoveFileHandlePointer:
 ; b = file handle
 ; dehl = file pointer
 ; a <- error
+; f <- nz: error
+; dehl <- file pointer
 DOS_SetFileHandlePointer:
 	ld a,0
 	jp DOS_MoveFileHandlePointer
 
 ; b = file handle
 ; a <- error
+; f <- nz: error
 ; dehl <- file pointer
 DOS_GetFileHandlePointer:
 	ld hl,0
@@ -284,6 +334,14 @@ DOS_GetFileHandlePointer:
 	ld a,1
 	jp DOS_MoveFileHandlePointer
 
+; b = volume name flag (bit 4)
+; de = path string
+; a <- error
+; f <- nz: error
+; b <- parse flags
+; c <- logical drive number
+; de <- termination character
+; hl <- start of last item
 DOS_ParsePathname:
 	ld c,_PARSE
 	jp BDOS
@@ -292,18 +350,29 @@ DOS_Terminate:
 	ld b,1
 	jp DOS_TerminateWithErrorCode
 
+; b = error code
 DOS_TerminateWithErrorCode:
 	ld c,_TERM
 	jp BDOS
 
+; de = abort exit routine, or 0 to undefine
 DOS_DefineAbortExitRoutine:
 	ld c,_DEFAB
 	jp BDOS
 
+; b = error code
+; de = 64 byte string buffer
+; de <- error message
 DOS_ExplainErrorCode:
 	ld c,_EXPLAIN
 	jp BDOS
 
+; b = buffer size (max 255)
+; de = string buffer
+; hl = name string
+; a <- error
+; f <- nz: error
+; de <- value
 DOS_GetEnvironmentItem:
 	ld c,_GENV
 	jp BDOS
