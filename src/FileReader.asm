@@ -24,7 +24,7 @@ FileReader_Construct:
 	pop de
 	ld a,00000001B  ; read only
 	call DOS_OpenFileHandle
-	call Application_CheckDOSError
+	call DOS_TerminateIfError
 	ld (ix + FileReader.fileHandle),b
 	ld e,ixl
 	ld d,ixh
@@ -35,7 +35,7 @@ FileReader_Construct:
 FileReader_Destruct:
 	ld b,(ix + FileReader.fileHandle)
 	call DOS_CloseFileHandle
-	call Application_CheckDOSError
+	call DOS_TerminateIfError
 	call Reader_Destruct
 	ret
 
@@ -49,6 +49,6 @@ FileReader_ReadFromFile_IY:
 	pop hl
 	ld b,(iy + FileReader.fileHandle)
 	call DOS_ReadFromFileHandle
-	call Application_CheckDOSError
+	call DOS_TerminateIfError
 	call DOS_ConsoleStatus  ; allow ctrl-c
 	ret

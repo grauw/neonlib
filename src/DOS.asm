@@ -350,6 +350,13 @@ DOS_Terminate:
 	ld b,1
 	jp DOS_TerminateWithErrorCode
 
+; a = error code
+DOS_TerminateIfError:
+	and a
+	ret z
+	ld b,a
+	jr DOS_TerminateWithErrorCode
+
 ; b = error code
 DOS_TerminateWithErrorCode:
 	ld c,_TERM

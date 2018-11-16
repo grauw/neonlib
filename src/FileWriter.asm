@@ -25,7 +25,7 @@ FileWriter_Construct:
 	ld a,00000010B  ; write only
 	ld b,0
 	call DOS_CreateFileHandle
-	call Application_CheckDOSError
+	call DOS_TerminateIfError
 	ld (ix + FileWriter.fileHandle),b
 	ld e,ixl
 	ld d,ixh
@@ -36,7 +36,7 @@ FileWriter_Construct:
 FileWriter_Destruct:
 	ld b,(ix + FileWriter.fileHandle)
 	call DOS_CloseFileHandle
-	call Application_CheckDOSError
+	call DOS_TerminateIfError
 	call Writer_Destruct
 	ret
 
@@ -50,6 +50,6 @@ FileWriter_WriteToFile:
 	pop hl
 	ld b,(ix + FileWriter.fileHandle)
 	call DOS_WriteToFileHandle
-	call Application_CheckDOSError
+	call DOS_TerminateIfError
 	call DOS_ConsoleStatus  ; allow ctrl-c
 	ret

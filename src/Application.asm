@@ -37,19 +37,6 @@ Application_CheckStack:
 	jp nc,System_TerminateWithError
 	ret
 
-; a = DOS error code
-Application_CheckDOSError:
-	and a
-	ret z
-Application_TerminateWithDOSError:
-	ld b,a
-	ld de,Application_explainBuffer
-	call DOS_ExplainErrorCode
-	ld hl,Application_explainBuffer
-	call System_Print
-	call System_PrintCrLf
-	jp System_Terminate
-
 ;
 Application_welcome:
 	db "Neon MSX library by Grauw",13,10,10,0
