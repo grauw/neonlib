@@ -2,15 +2,8 @@
 ; Top-level application program class
 ;
 Application_Main:
-	ld hl,DOS_Terminate
-	call System_SetTerminateHandler
-
 	ld hl,Application_welcome
 	call System_Print
-
-	call DOS_IsDOS2
-	ld hl,Application_dos2RequiredError
-	jp c,System_TerminateWithError
 
 	call Application_CheckStack
 

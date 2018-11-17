@@ -20,15 +20,12 @@ HEAP: ds VIRTUAL HEAP_SIZE
 
 	SECTION TPA
 
-;
-; Program entry point
-;
-COM_Main:
-	jp Application_Main
+	DOS2Runtime Application_Main
 
 	INCLUDE "DOS.asm"
 	INCLUDE "BIOS.asm"
 	INCLUDE "System.asm"
+	INCLUDE "DOS2Runtime.asm"
 	INCLUDE "Mapper.asm"
 	INCLUDE "Memory.asm"
 	INCLUDE "MemoryTest.asm"
