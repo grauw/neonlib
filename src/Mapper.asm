@@ -58,7 +58,7 @@ Mapper_Construct:
 	ld a,(HOKVLD)
 	bit 0,a
 	ld hl,Mapper_noMapperSupportError
-	jp z,System_TerminateWithError
+	jp z,System_ThrowExceptionWithMessage
 	push ix
 	ld a,0
 	ld de,0402H
@@ -67,7 +67,7 @@ Mapper_Construct:
 	push hl
 	and a
 	ld hl,Mapper_noMapperSupportError
-	jp z,System_TerminateWithError
+	jp z,System_ThrowExceptionWithMessage
 	pop hl
 	ld (ix + Mapper.primaryMapperSlot),b
 	ld e,ixl

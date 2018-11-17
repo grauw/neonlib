@@ -27,7 +27,7 @@ Application_CheckStack:
 	ld hl,-(HEAP + HEAP_SIZE + STACK_SIZE)
 	add hl,sp
 	ld hl,Application_insufficientTPAError
-	jp nc,System_TerminateWithError
+	jp nc,System_ThrowExceptionWithMessage
 	ret
 
 ;

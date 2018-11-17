@@ -448,9 +448,6 @@ System_TryCall_M: MACRO ?method
 	pop hl
 	ENDM
 
-; hl = message
-System_TerminateWithError: equ System_ThrowExceptionWithMessage
-
 System_ThrowException:
 	ld hl,System_exceptionMessage
 	jr System_ThrowExceptionWithMessage
