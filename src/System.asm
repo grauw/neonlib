@@ -2,6 +2,13 @@
 ; System routines
 ;
 System: MACRO
+	unwindStack:
+		dw 0
+	exceptionCode:
+		db 0
+	exceptionMessage:
+		dw 0
+
 	; ix = call address
 	; Modifies: iff (interrupts enabled)
 	CallBIOS:
@@ -14,10 +21,6 @@ System: MACRO
 	ReadBIOS:
 		jp System_ReadBIOS_Interslot
 	readBIOSHandler: equ $ - 2
-
-	Terminate:
-		jp System_Halt
-	terminateHandler: equ $ - 2
 
 	; Up to 19% faster alternative for large LDIRs (break-even at 21 loops)
 	; hl = source
@@ -44,7 +47,6 @@ System: MACRO
 
 System_CallBIOS: equ System_instance.CallBIOS
 System_ReadBIOS: equ System_instance.ReadBIOS
-System_Terminate: equ System_instance.Terminate
 System_FastLDIR: equ System_instance.FastLDIR
 
 System_SetDirectBIOSHandlers:
@@ -52,11 +54,6 @@ System_SetDirectBIOSHandlers:
 	ld (System_instance.callBIOSHandler),hl
 	ld hl,System_ReadBIOS_Direct
 	ld (System_instance.readBIOSHandler),hl
-	ret
-
-; hl = handler
-System_SetTerminateHandler:
-	ld (System_instance.terminateHandler),hl
 	ret
 
 ; ix = call address
@@ -427,47 +424,86 @@ System_Halt:
 	halt
 	jr System_Halt
 
+; hl = method to call
+System_TryCall:
+	push hl
+	ld hl,(System_instance.unwindStack)
+	ex (sp),hl
+	ld (System_instance.unwindStack),sp
+	call System_JumpHL
+	ex (sp),hl
+	ld (System_instance.unwindStack),hl
+	pop hl
+	ret
+
+; Modifies: none
+System_TryCall_M: MACRO ?method
+	push hl
+	ld hl,(System_instance.unwindStack)
+	ex (sp),hl
+	ld (System_instance.unwindStack),sp
+	call ?try
+	ex (sp),hl
+	ld (System_instance.unwindStack),hl
+	pop hl
+	ENDM
+
 ; hl = message
-System_TerminateWithError:
-	call System_Print
-	jp System_Terminate
+System_TerminateWithError: equ System_ThrowExceptionWithMessage
 
 System_ThrowException:
-	IF DEBUG
-	in a,(02EH)
-	ENDIF
-	pop de
-	call System_PrintExceptionMessage
-	jp System_Terminate
+	ld hl,System_exceptionMessage
+	jr System_ThrowExceptionWithMessage
 
 ; hl = message
 System_ThrowExceptionWithMessage:
 	IF DEBUG
 	in a,(02EH)
 	ENDIF
-	pop de
-	push hl
-	call System_PrintExceptionMessage
-	pop hl
-	call System_PrintLn
-	jp System_Terminate
+	ld a,1
+	ld (System_instance.exceptionCode),a
+	ld (System_instance.exceptionMessage),hl
+	jr System_Unwind
 
-; de = address
-System_PrintExceptionMessage:
-	push de
-	ld hl,System_exceptionMessage
-	call System_Print
-	pop hl
+; Tries to rethrow an uncaught exception
+System_Rethrow:
+	push af
+	call System_HasException
+	jr nz,System_Unwind
+	pop af
+	ret
+
+; f <- z: no
+System_HasException:
+	ld a,(System_instance.exceptionCode)
+	and a
+	ret
+
+System_CatchException:
+	push af
+	xor a
+	ld (System_instance.exceptionCode),a
+	ld (System_instance.exceptionMessage),a
+	ld (System_instance.exceptionMessage + 1),a
+	pop af
+	ret
+
+; Unwinds the stack to the last try call
+System_Unwind:
+	push af
+	ld a,(System_instance.unwindStack + 1)
+	and a
+	jr z,System_Halt
+	pop af
+	ld hl,(System_instance.unwindStack)
 	dec hl
 	dec hl
-	dec hl
-	call System_PrintHexHL
-	call System_PrintCrLf
+	ld sp,hl
 	ret
 
 ;
 System_exceptionMessage:
-	db "An exception occurred on address: ", 0
+	db "An exception occurred.", 0
 
 System_crlf:
 	db "\r\n", 0
