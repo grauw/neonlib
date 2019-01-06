@@ -177,6 +177,7 @@ System_PrintHexHL:
 ; Modifies: none
 System_PrintHexA:
 	push af
+	push af
 	rrca
 	rrca
 	rrca
@@ -186,11 +187,13 @@ System_PrintHexA:
 	pop af
 	and 0FH
 	call System_PrintHex
+	pop af
 	ret
 
 ; a = value
 ; Modifies: none
 System_PrintHexANoLeading0:
+	push af
 	push af
 	rrca
 	rrca
@@ -201,6 +204,7 @@ System_PrintHexANoLeading0:
 	pop af
 	and 0FH
 	call System_PrintHex
+	pop af
 	ret
 
 ; a = value (0 - 15)
