@@ -190,6 +190,7 @@ Split:
 	ld c,l
 	ld b,h
 	ex (sp),hl
+	and a
 	sbc hl,bc  ; hl = bytes until end
 	ld c,l
 	ld b,h
