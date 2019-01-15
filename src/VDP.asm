@@ -84,8 +84,7 @@ MSX1: ; complicated dance to enable TEXT 2 mode on MSX1 computers with v9938
 	or 3
 	ld (VDP_MIRROR_0 + 2),a
 	ld b,2
-	call VDP_SetRegister
-	ret
+	jp VDP_SetRegister
 	ENDP
 
 ; a = screen mode
@@ -108,48 +107,42 @@ VDP_Enable212Lines:
 	or 10000000B
 	ld (VDP_MIRROR_8 + 9),a
 	ld b,9
-	call VDP_SetRegister
-	ret
+	jp VDP_SetRegister
 
 VDP_Enable192Lines:
 	ld a,(VDP_MIRROR_8 + 9)
 	and 01111111B
 	ld (VDP_MIRROR_8 + 9),a
 	ld b,9
-	call VDP_SetRegister
-	ret
+	jp VDP_SetRegister
 
 VDP_EnableBlank:
 	ld a,(VDP_MIRROR_0 + 1)
 	and 10111111B
 	ld (VDP_MIRROR_0 + 1),a
 	ld b,1
-	call VDP_SetRegister
-	ret
+	jp VDP_SetRegister
 
 VDP_DisableBlank:
 	ld a,(VDP_MIRROR_0 + 1)
 	or 01000000B
 	ld (VDP_MIRROR_0 + 1),a
 	ld b,1
-	call VDP_SetRegister
-	ret
+	jp VDP_SetRegister
 
 VDP_EnableSprites:
 	ld a,(VDP_MIRROR_8 + 8)
 	and 11111101B
 	ld (VDP_MIRROR_8 + 8),a
 	ld b,8
-	call VDP_SetRegister
-	ret
+	jp VDP_SetRegister
 
 VDP_DisableSprites:
 	ld a,(VDP_MIRROR_8 + 8)
 	or 00000010B
 	ld (VDP_MIRROR_8 + 8),a
 	ld b,8
-	call VDP_SetRegister
-	ret
+	jp VDP_SetRegister
 
 ; f <- z: 60Hz, nz: 50Hz
 ; Modifies: af
@@ -163,16 +156,14 @@ VDP_Enable50Hz:
 	or 00000010B
 	ld (VDP_MIRROR_8 + 9),a
 	ld b,9
-	call VDP_SetRegister
-	ret
+	jp VDP_SetRegister
 
 VDP_Enable60Hz:
 	ld a,(VDP_MIRROR_8 + 9)
 	and 11111101B
 	ld (VDP_MIRROR_8 + 9),a
 	ld b,9
-	call VDP_SetRegister
-	ret
+	jp VDP_SetRegister
 
 VDP_EnableLineInt:
 	ld a,0  ; set HR line 0
@@ -187,8 +178,7 @@ VDP_EnableLineInt:
 	or 00010000B
 	ld (VDP_MIRROR_0 + 0),a
 	ld b,0
-	call VDP_SetRegister
-	ret
+	jp VDP_SetRegister
 
 VDP_DisableLineInt:
 	ld a,(VDP_MIRROR_0 + 0)  ; disable IE1
@@ -200,8 +190,7 @@ VDP_DisableLineInt:
 	or 00100000B
 	ld (VDP_MIRROR_0 + 1),a
 	ld b,1
-	call VDP_SetRegister
-	ret
+	jp VDP_SetRegister
 
 VDP_EnableScrollMask: PROC
 	ld a,(VDP_MIRROR_25 + 25)
@@ -224,8 +213,7 @@ NoClamp:
 	and 0FH
 	or b
 	ld b,18
-	call VDP_SetRegister
-	ret
+	jp VDP_SetRegister
 	ENDP
 
 VDP_EnableBlink: PROC
@@ -245,8 +233,7 @@ VDP_EnableBlink: PROC
 	call VDP_SetWriteAddress
 	xor a
 	ld bc,27 * 10
-	call VDP_Fill
-	ret
+	jp VDP_Fill
 	ENDP
 
 ;
@@ -335,8 +322,7 @@ VDP_GetModeFlags:
 ; a = color (bits 0-3: background, bits 7-4: text)
 VDP_SetColor:
 	ld b,7
-	call VDP_SetRegister
-	ret
+	jp VDP_SetRegister
 
 ; ahl = base address (17-bit, multiples of 200H)
 VDP_SetColorTableBase:
@@ -352,8 +338,7 @@ VDP_SetColorTableBase:
 	or 00000111B
 	ld (VDP_MIRROR_0 + 3),a
 	ld b,3
-	call VDP_SetRegister
-	ret
+	jp VDP_SetRegister
 
 ; a = value
 ; b = register

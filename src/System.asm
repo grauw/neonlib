@@ -159,8 +159,7 @@ System_PrintHexDEHL:
 	ex de,hl
 	call System_PrintHexHL
 	ex de,hl
-	call System_PrintHexHL
-	ret
+	jr System_PrintHexHL
 
 ; hl = value
 ; Modifies: none
@@ -391,16 +390,14 @@ System_EnableTurbo:
 	ret c
 	ld a,10000001B
 	ld ix,CHGCPU
-	call System_CallBIOS
-	ret
+	jp System_CallBIOS
 
 System_DisableTurbo:
 	call System_IsTurboR
 	ret c
 	ld a,10000000B
 	ld ix,CHGCPU
-	call System_CallBIOS
-	ret
+	jp System_CallBIOS
 
 ; f <- c: not turbo R
 System_IsTurboR:

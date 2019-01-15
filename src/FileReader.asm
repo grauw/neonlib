@@ -36,8 +36,7 @@ FileReader_Destruct:
 	ld b,(ix + FileReader.fileHandle)
 	call DOS_CloseFileHandle
 	call DOS_TerminateIfError
-	call Reader_Destruct
-	ret
+	jp Reader_Destruct
 
 ; bc = byte count
 ; de = buffer start
@@ -50,5 +49,4 @@ FileReader_ReadFromFile_IY:
 	ld b,(iy + FileReader.fileHandle)
 	call DOS_ReadFromFileHandle
 	call DOS_TerminateIfError
-	call DOS_ConsoleStatus  ; allow ctrl-c
-	ret
+	jp DOS_ConsoleStatus  ; allow ctrl-c

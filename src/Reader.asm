@@ -258,8 +258,7 @@ Reader_FillIfNeeded_IY:
 	ld (iy + Reader.fillPending),0
 	inc (iy + Reader.bufferPosition)
 	inc (iy + Reader.bufferPosition + 1)
-	call Reader_FinishBlock_IY
-	ret
+	jp Reader_FinishBlock_IY
 
 ; bc = nr of bytes to skip
 ; iy = this

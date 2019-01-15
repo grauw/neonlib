@@ -88,9 +88,8 @@ Mapper_Construct:
 
 ; ix = this
 ; ix <- this
-Mapper_Destruct:
-	call Mapper_RestoreInitialState
-	ret
+Mapper_Destruct: equ Mapper_RestoreInitialState
+;	jp Mapper_RestoreInitialState
 
 ; ix = this
 Mapper_RestoreInitialState:
@@ -105,8 +104,7 @@ Mapper_RestoreInitialState:
 	ld a,(ix + Mapper.initialPage1)
 	call Mapper_instance.PutP1
 	ld a,(ix + Mapper.initialPage0)
-	call Mapper_instance.PutP0
-	ret
+	jp Mapper_instance.PutP0
 
 ; ix = this
 Mapper_PrintInfo: PROC

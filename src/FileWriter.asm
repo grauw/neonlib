@@ -37,8 +37,7 @@ FileWriter_Destruct:
 	ld b,(ix + FileWriter.fileHandle)
 	call DOS_CloseFileHandle
 	call DOS_TerminateIfError
-	call Writer_Destruct
-	ret
+	jp Writer_Destruct
 
 ; bc = byte count
 ; de = buffer start
@@ -51,5 +50,4 @@ FileWriter_WriteToFile:
 	ld b,(ix + FileWriter.fileHandle)
 	call DOS_WriteToFileHandle
 	call DOS_TerminateIfError
-	call DOS_ConsoleStatus  ; allow ctrl-c
-	ret
+	jp DOS_ConsoleStatus  ; allow ctrl-c

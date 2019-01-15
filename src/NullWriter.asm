@@ -16,18 +16,15 @@ NullWriter_template: NullWriter
 ; de <- this
 NullWriter_Construct:
 	ld de,NullWriter_Flush
-	call Writer_Construct
-	ret
+	jp Writer_Construct
 
 ; ix = this
 ; ix <- this
-NullWriter_Destruct:
-	call Writer_Destruct
-	ret
+NullWriter_Destruct: equ Writer_Destruct
+;	jp Writer_Destruct
 
 ; bc = byte count
 ; de = buffer start
 ; ix = this
-NullWriter_Flush:
-	call DOS_ConsoleStatus  ; allow ctrl-c
-	ret
+NullWriter_Flush: equ DOS_ConsoleStatus
+;	jp DOS_ConsoleStatus  ; allow ctrl-c
