@@ -385,27 +385,6 @@ System_JumpIX:
 System_JumpIY:
 	jp iy
 
-System_EnableTurbo:
-	call System_IsTurboR
-	ret c
-	ld a,10000001B
-	ld ix,CHGCPU
-	jp System_CallBIOS
-
-System_DisableTurbo:
-	call System_IsTurboR
-	ret c
-	ld a,10000000B
-	ld ix,CHGCPU
-	jp System_CallBIOS
-
-; f <- c: not turbo R
-System_IsTurboR:
-	ld hl,IDBYT2
-	call System_ReadBIOS
-	cp 3
-	ret
-
 ; hl <- current timer value, in 14 cycle increments
 ; Modifies: af, hl
 System_GetHighResTimerValue:
