@@ -27,7 +27,6 @@
 # Console commands:
 #
 # profile_osd - show the on-screen display of the current frame time.
-# profile_ms - toggle the OSD values between percentage and milliseconds.
 # profile - show the detailed current profiling status in the console.
 #
 # See help <command> for more information.
@@ -44,7 +43,7 @@ namespace eval profile {
 	variable frame_total_time 0
 	variable width 32
 	variable height 8
-	variable percent true
+	variable osd_unit %
 
 	debug set_watchpoint read_io 0x2C {} [namespace code {
 		slot_begin [expr $::wp_last_address >> 8]
@@ -135,7 +134,7 @@ namespace eval profile {
 				variable width
 				variable height
 				variable frame_total_time
-				variable percent
+				variable osd_unit
 
 				set fraction [expr $frame_total_time != 0 ? $frame_time / $frame_total_time : 0]
 
@@ -149,11 +148,16 @@ namespace eval profile {
 				osd configure profile.$slotid -x [expr ($index * $height / 240) * $width] -y [expr $index * $height % 240]
 				osd configure profile.$slotid.bar -w [expr ($fraction < 0 ? 0 : $fraction > 1 ? 1 : $fraction) * $width]
 
-				if {$percent} {
-					osd configure profile.$slotid.text -text [format "%s: %00.2f%%" $slotid [expr $fraction * 100]]
+				if {$osd_unit eq "s"} {
+					set text [format "%s: %.3f s" $slotid $frame_time]
+				} elseif {$osd_unit eq "ms"} {
+					set text [format "%s: %.2f ms" $slotid [to_ms $frame_time]]
+				} elseif {$osd_unit eq "t"} {
+					set text [format "%s: %d T" $slotid [to_cycles $frame_time]]
 				} else {
-					osd configure profile.$slotid.text -text [format "%s: %.2f ms" $slotid [expr $frame_time * 1000]]
+					set text [format "%s: %00.2f%%" $slotid [expr $fraction * 100]]
 				}
+				osd configure profile.$slotid.text -text $text
 			}
 			incr index
 		}
@@ -178,8 +182,13 @@ namespace eval profile {
 		expr $value > 255 ? 255 : $value < 0 ? 0 : $value
 	}
 
-	proc get_cpu_freq {} {
-		expr {[cpuregs::get_active_cpu] eq {z80}} ? [machine_info z80_freq] : [machine_info r800_freq]
+	proc to_ms {seconds} {
+		expr $seconds * 1000
+	}
+
+	proc to_cycles {seconds} {
+		set cpu [get_active_cpu]
+		expr round($seconds * [machine_info ${cpu}_freq])
 	}
 
 	set_help_text profile [join {
@@ -210,26 +219,31 @@ namespace eval profile {
 
 	set_tabcompletion_proc profile [namespace code profile_tab]
 
-	set_help_text profile_osd {Show the on-screen display of the current frame time.}
-	proc profile_osd {} {
+	set_help_text profile_osd [join {
+		{Show the on-screen display of the current frame time.}
+		{Optionally specify the unit (s, ms, t or %).}
+	} "\n"]
+	proc profile_osd {{unit ""}} {
+		if {$unit ne ""} {
+			variable osd_unit
+			set osd_unit $unit
+		}
 		if {![osd exists profile]} {
 			osd create rectangle profile
-		} else {
+		} elseif {$unit eq ""} {
 			osd destroy profile
 		}
 		return
 	}
 
-	set_help_text profile_ms {Toggle the OSD values between percentage and milliseconds.}
-	proc profile_ms {} {
-		variable percent
-		set percent [expr !$percent]
-		return
+	proc profile_osd_tab {args} {
+		list s ms t %
 	}
+
+	set_tabcompletion_proc profile_osd [namespace code profile_osd_tab]
 
 	namespace export profile
 	namespace export profile_osd
-	namespace export profile_ms
 }
 
 namespace import profile::*
