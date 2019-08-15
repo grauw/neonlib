@@ -30,6 +30,8 @@
 # profile_ms - toggle the OSD values between percentage and milliseconds.
 # profile - show the detailed current profiling status in the console.
 #
+# See help <command> for more information.
+#
 # Legend: the “frame” value indicates the time spent in the last frame, the
 # “current” value shows the currently accumulated time, the “count” value shows
 # the number of times a section was started, and finally the “balance” value
@@ -180,6 +182,7 @@ namespace eval profile {
 		expr {[cpuregs::get_active_cpu] eq {z80}} ? [machine_info z80_freq] : [machine_info r800_freq]
 	}
 	
+	set_help_text profile {Show the detailed current profiling status in the console.}	
 	proc profile {} {
 		variable slots
 		foreach slotid [dict keys $slots] {
@@ -193,6 +196,7 @@ namespace eval profile {
 		}
 	}
 	
+	set_help_text profile_osd {Show the on-screen display of the current frame time.}
 	proc profile_osd {} {
 		if {![osd exists profile]} {
 			osd create rectangle profile
@@ -202,6 +206,7 @@ namespace eval profile {
 		return
 	}
 	
+	set_help_text profile_ms {Toggle the OSD values between percentage and milliseconds.}	
 	proc profile_ms {} {
 		variable percent
 		set percent [expr !$percent]
