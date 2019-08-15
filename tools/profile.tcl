@@ -182,10 +182,17 @@ namespace eval profile {
 		expr {[cpuregs::get_active_cpu] eq {z80}} ? [machine_info z80_freq] : [machine_info r800_freq]
 	}
 
-	set_help_text profile {Show the detailed current profiling status in the console.}
-	proc profile {} {
+	set_help_text profile [join {
+		{Show the detailed current profiling status in the console.}
+		{Optionally specify a slot ID.}
+	} "\n"]
+	proc profile {{slotid ""}} {
 		variable slots
-		foreach slotid [dict keys $slots] {
+		if {$slotid eq ""} {
+			foreach slotid [dict keys $slots] {
+				profile $slotid
+			}
+		} elseif {[dict exists $slots $slotid]} {
 			slot_with $slotid {
 				variable frame_total_time
 				set percentage [expr $frame_total_time != 0 ? $frame_time * 100 / $frame_total_time : 0]
@@ -195,6 +202,13 @@ namespace eval profile {
 			}
 		}
 	}
+
+	proc profile_tab {args} {
+		variable slots
+		dict keys $slots
+	}
+
+	set_tabcompletion_proc profile [namespace code profile_tab]
 
 	set_help_text profile_osd {Show the on-screen display of the current frame time.}
 	proc profile_osd {} {
