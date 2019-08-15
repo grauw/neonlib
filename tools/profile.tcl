@@ -209,17 +209,25 @@ namespace eval profile {
 				set current [expr $total_time + ($balance > 0 ? [machine_info time] - $start_time : 0)]
 
 				if {$unit eq "s"} {
-					puts [format {%s :: frame: %.8f s, current: %.8f s, count: %d, balance: %d} \
-						$slotid $frame_time $current $count $balance]
+					set frame_unit [format {%.8f s} $frame_time]
+					set current_unit [format {%.8f s} $current]
 				} elseif {$unit eq "ms"} {
-					puts [format {%s :: frame: %.5f ms, current: %.5f ms, count: %d, balance: %d} \
-						$slotid [to_ms $frame_time] [to_ms $current] $count $balance]
+					set frame_unit [format {%.5f ms} [to_ms $frame_time]]
+					set current_unit [format {%.5f ms} [to_ms $current]]
 				} elseif {$unit eq "t"} {
-					puts [format {%s :: frame: %d T, current: %d T, count: %d, balance: %d} \
-						$slotid [to_cycles $frame_time] [to_cycles $current] $count $balance]
+					set frame_unit [format {%d T} [to_cycles $frame_time]]
+					set current_unit [format {%d T} [to_cycles $current]]
 				} else {
-					puts [format {%s :: frame: %05.2f%%, current: %.8f s, count: %d, balance: %d} \
-						$slotid $percentage $current $count $balance]
+					set frame_unit [format {%05.2f%%} $percentage]
+					set current_unit [format {%.8f s} $current]
+				}
+
+				if {$frame_total_time != 0} {
+					puts [format {%s :: frame: %s, current: %s, count: %d, balance: %d} \
+						$slotid $frame_unit $current_unit $count $balance]
+				} else {
+					puts [format {%s :: current: %s, count: %d, balance: %d} \
+						$slotid $current_unit $count $balance]
 				}
 			}
 		}
