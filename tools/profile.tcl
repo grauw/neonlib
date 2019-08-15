@@ -44,22 +44,22 @@ namespace eval profile {
 	variable height 8
 	variable percent true
 	
-	debug set_watchpoint read_io 0x2C {} {
-		profile::slot_begin [expr $::wp_last_address >> 8]
-	}
+	debug set_watchpoint read_io 0x2C {} [namespace code {
+		slot_begin [expr $::wp_last_address >> 8]
+	}]
 	
-	debug set_watchpoint write_io 0x2C {} {
-		profile::slot_end [expr $::wp_last_address >> 8]
-	}
+	debug set_watchpoint write_io 0x2C {} [namespace code {
+		slot_end [expr $::wp_last_address >> 8]
+	}]
 	
-	debug set_watchpoint read_io 0x2D {} {
-		profile::frame_begin 
-		profile::slot_begin x
-	}
+	debug set_watchpoint read_io 0x2D {} [namespace code {
+		frame_begin 
+		slot_begin x
+	}]
 	
-	debug set_watchpoint write_io 0x2D {} {
-		profile::slot_end x
-	}
+	debug set_watchpoint write_io 0x2D {} [namespace code {
+		slot_end x
+	}]
 	
 	proc slots_create {slotids} {
 		foreach slotid $slotids {
