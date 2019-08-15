@@ -61,6 +61,12 @@ namespace eval profile {
 		profile::slot_end x
 	}
 	
+	proc slots_create {slotids} {
+		foreach slotid $slotids {
+			slot_create $slotid
+		}
+	}
+	
 	proc slot_create {slotid} {
 		variable slots
 		if {![dict exists $slots $slotid]} {
@@ -120,9 +126,10 @@ namespace eval profile {
 			return
 		}
 		variable slots
+		set index 0
 		foreach slotid [dict keys $slots] {
 			slot_with $slotid {
-				set index [expr {$slotid eq {x} ? 0 : [expr $slotid + 1]}]
+				upvar index index
 				variable width
 				variable height
 				variable frame_total_time
@@ -146,6 +153,7 @@ namespace eval profile {
 					osd configure profile.$slotid.text -text [format "%s: %.2f ms" $slotid [expr $frame_time * 1000]]
 				}
 			}
+			incr index
 		}
 	}
 	
