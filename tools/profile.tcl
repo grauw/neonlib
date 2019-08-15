@@ -193,21 +193,34 @@ namespace eval profile {
 
 	set_help_text profile [join {
 		{Show the detailed current profiling status in the console.}
-		{Optionally specify a slot ID.}
+		{Optionally specify a slot ID and a unit (s, ms, t, %).}
 	} "\n"]
-	proc profile {{slotid ""}} {
+	proc profile {{slotid ""} {unit "s"}} {
 		variable slots
 		if {$slotid eq ""} {
 			foreach slotid [dict keys $slots] {
-				profile $slotid
+				profile $slotid $unit
 			}
 		} elseif {[dict exists $slots $slotid]} {
 			slot_with $slotid {
+				upvar unit unit
 				variable frame_total_time
 				set percentage [expr $frame_total_time != 0 ? $frame_time * 100 / $frame_total_time : 0]
 				set current [expr $total_time + ($balance > 0 ? [machine_info time] - $start_time : 0)]
-				puts [format {%s :: frame: %.8f (%05.2f%%), current: %.8f, count: %d, balance: %d} \
-					$slotid $frame_time $percentage $current $count $balance]
+
+				if {$unit eq "s"} {
+					puts [format {%s :: frame: %.8f s, current: %.8f s, count: %d, balance: %d} \
+						$slotid $frame_time $current $count $balance]
+				} elseif {$unit eq "ms"} {
+					puts [format {%s :: frame: %.5f ms, current: %.5f ms, count: %d, balance: %d} \
+						$slotid [to_ms $frame_time] [to_ms $current] $count $balance]
+				} elseif {$unit eq "t"} {
+					puts [format {%s :: frame: %d T, current: %d T, count: %d, balance: %d} \
+						$slotid [to_cycles $frame_time] [to_cycles $current] $count $balance]
+				} else {
+					puts [format {%s :: frame: %05.2f%%, current: %.8f s, count: %d, balance: %d} \
+						$slotid $percentage $current $count $balance]
+				}
 			}
 		}
 	}
