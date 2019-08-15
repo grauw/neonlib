@@ -45,20 +45,20 @@ namespace eval profile {
 	variable percent true
 	
 	debug set_watchpoint read_io 0x2C {} {
-		profile::slot_begin [expr $::wp_last_address >> 8] [machine_info time]
+		profile::slot_begin [expr $::wp_last_address >> 8]
 	}
 	
 	debug set_watchpoint write_io 0x2C {} {
-		profile::slot_end [expr $::wp_last_address >> 8] [machine_info time]
+		profile::slot_end [expr $::wp_last_address >> 8]
 	}
 	
 	debug set_watchpoint read_io 0x2D {} {
-		profile::frame_begin [machine_info time]
-		profile::slot_begin x [machine_info time]
+		profile::frame_begin 
+		profile::slot_begin x
 	}
 	
 	debug set_watchpoint write_io 0x2D {} {
-		profile::slot_end x [machine_info time]
+		profile::slot_end x
 	}
 	
 	proc slot_ensure {slotid} {
@@ -74,44 +74,43 @@ namespace eval profile {
 		dict with slots $slotid $body
 	}
 	
-	proc slot_begin {slotid current_time} {
+	proc slot_begin {slotid} {
 		slot_with $slotid {
-			upvar current_time current_time
 			if {$balance == 0} {
-				set start_time [expr $current_time]
+				set start_time [machine_info time]
 			}
 			incr balance
 			incr count
 		}
 	}
 	
-	proc slot_end {slotid current_time} {
+	proc slot_end {slotid} {
 		slot_with $slotid {
-			upvar current_time current_time
 			if {$balance == 1} {
-				set total_time [expr $total_time + $current_time - $start_time]
+				set total_time [expr $total_time + [machine_info time] - $start_time]
 			}
 			incr balance -1
 		}
 	}
 	
-	proc slot_flush_frame {slotid current_time} {
+	proc slot_flush_frame {slotid} {
 		slot_with $slotid {
-			upvar current_time current_time
-			set frame_time [expr $total_time + ($balance > 0 ? $current_time - $start_time : 0)]
+			set time [machine_info time]
+			set frame_time [expr $total_time + ($balance > 0 ? $time - $start_time : 0)]
 			set total_time 0
-			set start_time $current_time
+			set start_time $time
 		}
 	}
 	
-	proc frame_begin {current_time} {
+	proc frame_begin {} {
 		variable slots
 		variable frame_start_time
 		variable frame_total_time
-		set frame_total_time [expr $current_time - $frame_start_time]
-		set frame_start_time $current_time
+		set time [machine_info time]
+		set frame_total_time [expr $time - $frame_start_time]
+		set frame_start_time $time
 		foreach slotid [dict keys $slots] {
-			slot_flush_frame $slotid $current_time
+			slot_flush_frame $slotid
 		}
 		osd_update
 	}
