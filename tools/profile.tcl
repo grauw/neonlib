@@ -45,43 +45,43 @@ namespace eval profile {
 	variable width 32
 	variable height 8
 	variable percent true
-	
+
 	debug set_watchpoint read_io 0x2C {} [namespace code {
 		slot_begin [expr $::wp_last_address >> 8]
 	}]
-	
+
 	debug set_watchpoint write_io 0x2C {} [namespace code {
 		slot_end [expr $::wp_last_address >> 8]
 	}]
-	
+
 	debug set_watchpoint read_io 0x2D {} [namespace code {
-		frame_begin 
+		frame_begin
 		slot_begin x
 	}]
-	
+
 	debug set_watchpoint write_io 0x2D {} [namespace code {
 		slot_end x
 	}]
-	
+
 	proc slots_create {slotids} {
 		foreach slotid $slotids {
 			slot_create $slotid
 		}
 	}
-	
+
 	proc slot_create {slotid} {
 		variable slots
 		if {![dict exists $slots $slotid]} {
 			dict set slots $slotid [dict create total_time 0 start_time -1 count 0 balance 0 frame_time 0]
 		}
 	}
-	
+
 	proc slot_with {slotid body} {
 		variable slots
 		slot_create $slotid
 		dict with slots $slotid $body
 	}
-	
+
 	proc slot_begin {slotid} {
 		slot_with $slotid {
 			if {$balance == 0} {
@@ -91,7 +91,7 @@ namespace eval profile {
 			incr count
 		}
 	}
-	
+
 	proc slot_end {slotid} {
 		slot_with $slotid {
 			if {$balance == 1} {
@@ -100,7 +100,7 @@ namespace eval profile {
 			incr balance -1
 		}
 	}
-	
+
 	proc slot_flush_frame {slotid} {
 		slot_with $slotid {
 			set time [machine_info time]
@@ -109,7 +109,7 @@ namespace eval profile {
 			set start_time $time
 		}
 	}
-	
+
 	proc frame_begin {} {
 		variable slots
 		variable frame_start_time
@@ -122,7 +122,7 @@ namespace eval profile {
 		}
 		osd_update
 	}
-	
+
 	proc osd_update {} {
 		if {![osd exists profile]} {
 			return
@@ -136,19 +136,19 @@ namespace eval profile {
 				variable height
 				variable frame_total_time
 				variable percent
-				
+
 				set fraction [expr $frame_total_time != 0 ? $frame_time / $frame_total_time : 0]
-				
+
 				if {![osd exists profile.$slotid]} {
 					set rgba [osd_hya [expr $index * 0.14] 0.5 1.0]
 					osd create rectangle profile.$slotid -x 0 -y 0 -w $width -h $height -scaled true -clip true -rgba 0x00000088
 					osd create rectangle profile.$slotid.bar -x 0 -y 0 -w 0 -h $height -scaled true -rgba $rgba
 					osd create text profile.$slotid.text -x 2 -y 1 -size 5 -scaled true -rgba 0xffffffff
 				}
-				
+
 				osd configure profile.$slotid -x [expr ($index * $height / 240) * $width] -y [expr $index * $height % 240]
 				osd configure profile.$slotid.bar -w [expr ($fraction < 0 ? 0 : $fraction > 1 ? 1 : $fraction) * $width]
-				
+
 				if {$percent} {
 					osd configure profile.$slotid.text -text [format "%s: %00.2f%%" $slotid [expr $fraction * 100]]
 				} else {
@@ -158,13 +158,13 @@ namespace eval profile {
 			incr index
 		}
 	}
-	
+
 	proc osd_hya {h y a} {
 		set h [expr ($h - floor($h)) * 8.0]
 		osd_yuva $y [expr $h < 2.0 ? -1.0 : $h < 4.0 ? $h - 3.0 : $h < 6.0 ? 1.0 : 7.0 - $h] \
 		            [expr $h < 2.0 ? $h - 1.0 : $h < 4.0 ? 1.0 : $h < 6.0 ? 5.0 - $h : -1.0] $a
 	}
-	
+
 	proc osd_yuva {y u v a} {
 		set r [fraction_to_uint8 [expr $y + 1.28033 * 0.615 * $v]]
 		set g [fraction_to_uint8 [expr $y - 0.21482 * 0.436 * $u - 0.38059 * 0.615 * $v]]
@@ -172,17 +172,17 @@ namespace eval profile {
 		set a [fraction_to_uint8 $a]
 		expr $r << 24 | $g << 16 | $b << 8 | $a
 	}
-	
+
 	proc fraction_to_uint8 {value} {
 		set value [expr round($value * 255)]
 		expr $value > 255 ? 255 : $value < 0 ? 0 : $value
 	}
-	
+
 	proc get_cpu_freq {} {
 		expr {[cpuregs::get_active_cpu] eq {z80}} ? [machine_info z80_freq] : [machine_info r800_freq]
 	}
-	
-	set_help_text profile {Show the detailed current profiling status in the console.}	
+
+	set_help_text profile {Show the detailed current profiling status in the console.}
 	proc profile {} {
 		variable slots
 		foreach slotid [dict keys $slots] {
@@ -195,7 +195,7 @@ namespace eval profile {
 			}
 		}
 	}
-	
+
 	set_help_text profile_osd {Show the on-screen display of the current frame time.}
 	proc profile_osd {} {
 		if {![osd exists profile]} {
@@ -205,14 +205,14 @@ namespace eval profile {
 		}
 		return
 	}
-	
-	set_help_text profile_ms {Toggle the OSD values between percentage and milliseconds.}	
+
+	set_help_text profile_ms {Toggle the OSD values between percentage and milliseconds.}
 	proc profile_ms {} {
 		variable percent
 		set percent [expr !$percent]
 		return
 	}
-	
+
 	namespace export profile
 	namespace export profile_osd
 	namespace export profile_ms
