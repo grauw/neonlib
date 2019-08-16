@@ -41,6 +41,7 @@ namespace eval profile {
 	variable slots [dict create]
 	variable frame_start_time 0
 	variable frame_total_time 0
+	variable frame_break false
 	variable width 32
 	variable height 8
 	variable osd_unit %
@@ -113,6 +114,7 @@ namespace eval profile {
 		variable slots
 		variable frame_start_time
 		variable frame_total_time
+		variable frame_break
 		set time [machine_info time]
 		set frame_total_time [expr $time - $frame_start_time]
 		set frame_start_time $time
@@ -120,6 +122,10 @@ namespace eval profile {
 			slot_flush_frame $slotid
 		}
 		osd_update
+		if ($frame_break) {
+			set frame_break false
+			debug break
+		}
 	}
 
 	proc osd_update {} {
@@ -263,8 +269,16 @@ namespace eval profile {
 
 	set_tabcompletion_proc profile_osd [namespace code profile_osd_tab]
 
+	set_help_text profile_frame {Advance to the next profiling frame.}
+	proc profile_frame {} {
+		variable frame_break
+		set frame_break true
+		debug cont
+	}
+
 	namespace export profile
 	namespace export profile_osd
+	namespace export profile_frame
 }
 
 namespace import profile::*
