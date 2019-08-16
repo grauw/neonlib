@@ -55,7 +55,6 @@ namespace eval profile {
 	}]
 
 	debug set_watchpoint read_io 0x2D {} [namespace code {
-		frame_begin
 		slot_begin frame
 	}]
 
@@ -90,6 +89,10 @@ namespace eval profile {
 			incr balance
 			incr count
 		}
+
+		if {$slotid eq "frame"} {
+			slot_frame_flush
+		}
 	}
 
 	proc slot_end {slotid} {
@@ -101,16 +104,7 @@ namespace eval profile {
 		}
 	}
 
-	proc slot_flush_frame {slotid} {
-		slot_with $slotid {
-			set time [machine_info time]
-			set frame_time [expr $total_time + ($balance > 0 ? $time - $start_time : 0)]
-			set total_time 0
-			set start_time $time
-		}
-	}
-
-	proc frame_begin {} {
+	proc slot_frame_flush {} {
 		variable slots
 		variable frame_start_time
 		variable frame_total_time
@@ -119,7 +113,12 @@ namespace eval profile {
 		set frame_total_time [expr $time - $frame_start_time]
 		set frame_start_time $time
 		foreach slotid [dict keys $slots] {
-			slot_flush_frame $slotid
+			slot_with $slotid {
+				set time [machine_info time]
+				set frame_time [expr $total_time + ($balance > 0 ? $time - $start_time : 0)]
+				set total_time 0
+				set start_time $time
+			}
 		}
 		osd_update
 		if ($frame_break) {
