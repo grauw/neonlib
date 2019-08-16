@@ -61,7 +61,7 @@ namespace eval profile {
 		profile::slot_end x
 	}
 	
-	proc slot_ensure {slotid} {
+	proc slot_create {slotid} {
 		variable slots
 		if {![dict exists $slots $slotid]} {
 			dict set slots $slotid [dict create total_time 0 start_time -1 count 0 balance 0 frame_time 0]
@@ -70,7 +70,7 @@ namespace eval profile {
 	
 	proc slot_with {slotid body} {
 		variable slots
-		slot_ensure $slotid
+		slot_create $slotid
 		dict with slots $slotid $body
 	}
 	
