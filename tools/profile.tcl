@@ -42,7 +42,7 @@ namespace eval profile {
 	variable frame_start_time 0
 	variable frame_total_time 0
 	variable frame_break false
-	variable width 32
+	variable width 40
 	variable height 8
 	variable osd_unit %
 
@@ -56,11 +56,11 @@ namespace eval profile {
 
 	debug set_watchpoint read_io 0x2D {} [namespace code {
 		frame_begin
-		slot_begin x
+		slot_begin frame
 	}]
 
 	debug set_watchpoint write_io 0x2D {} [namespace code {
-		slot_end x
+		slot_end frame
 	}]
 
 	proc slots_create {slotids} {
