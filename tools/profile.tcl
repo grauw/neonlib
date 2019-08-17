@@ -11,16 +11,16 @@
 #
 # Commands:
 #
-# profile [<id>] [<unit>]
+# profile [<ids>] [<unit>]
 # profile_osd [<unit>]
 # profile_frame
-# profile::section_begin <id>
-# profile::section_end <id>
-# profile::section_begin_bp <id> <address> [<condition>]
-# profile::section_end_bp <id> <address> [<condition>]
-# profile::section_scope_bp <id> <address> [<condition>]
-# profile::section_irq_bp <id> [<condition>]
-# profile::sections_create <id>...
+# profile::section_begin <ids>
+# profile::section_end <ids>
+# profile::section_begin_bp <ids> <address> [<condition>]
+# profile::section_end_bp <ids> <address> [<condition>]
+# profile::section_scope_bp <ids> <address> [<condition>]
+# profile::section_irq_bp <ids> [<condition>]
+# profile::section_create <ids>
 #
 # See help <command> for more information.
 #
@@ -48,107 +48,101 @@ namespace eval profile {
 	}]
 
 	set_help_text profile::section_begin_bp [join {
-		"Usage: profile::section_begin_bp <id> <address> \[<condition>]\n"
+		"Usage: profile::section_begin_bp <ids> <address> \[<condition>]\n"
 		"Define a breakpoint which starts a section."
 	} {}]
-	proc section_begin_bp {id address {condition {}}} {
-		section_create $id
-		debug set_bp $address $condition [namespace code "section_begin $id"]
+	proc section_begin_bp {ids address {condition {}}} {
+		section_create $ids
+		debug set_bp $address $condition [namespace code "section_begin {$ids}"]
 	}
 
 	set_help_text profile::section_end_bp [join {
-		"Usage: profile::section_end_bp <id> <address> \[<condition>]\n"
+		"Usage: profile::section_end_bp <ids> <address> \[<condition>]\n"
 		"Define a breakpoint which ends a section."
 	} {}]
-	proc section_end_bp {id address {condition {}}} {
-		section_create $id
-		debug set_bp $address $condition [namespace code "section_end $id"]
+	proc section_end_bp {ids address {condition {}}} {
+		section_create $ids
+		debug set_bp $address $condition [namespace code "section_end {$ids}"]
 	}
 
 	set_help_text profile::section_scope_bp [join {
-		"Usage: profile::section_scope_bp <id> <address> \[<condition>]\n"
+		"Usage: profile::section_scope_bp <ids> <address> \[<condition>]\n"
 		"Define a breakpoint which starts a section, and will end it after the "
 		"value on the top of the stack is read, typically when the method "
 		"returns or when it is popped. Useful for profiling function calls."
 	} {}]
-	proc section_scope_bp {id address {condition {}}} {
-		section_create $id
-		set begin [namespace code "section_begin $id"]
-		set end [namespace code "section_end $id"]
+	proc section_scope_bp {ids address {condition {}}} {
+		section_create $ids
+		set begin [namespace code "section_begin {$ids}"]
+		set end [namespace code "section_end {$ids}"]
 		debug set_bp $address $condition \
 			"$begin\ndebug set_watchpoint read_mem -once \[reg sp] {} {debug set_condition -once {} {$end}}"
 	}
 
 	set_help_text profile::section_irq_bp [join {
-		"Usage: profile::section_irq_bp <id> \[<condition>]\n"
+		"Usage: profile::section_irq_bp <ids> \[<condition>]\n"
 		"Define a probe breakpoint which starts a section when the CPU accepts "
 		"an IRQ, and ends it after the return address on the stack is read, "
 		"typically when it returns. Useful for profiling interrupt handlers."
 	} {}]
-	proc section_irq_bp {id {condition {}}} {
-		section_create $id
-		set begin [namespace code "section_begin $id"]
-		set end [namespace code "section_end $id"]
+	proc section_irq_bp {ids {condition {}}} {
+		section_create $ids
+		set begin [namespace code "section_begin {$ids}"]
+		set end [namespace code "section_end {$ids}"]
 		set handler "$begin\ndebug set_watchpoint read_mem -once \[expr \[reg sp] - 2] {} {debug set_condition -once {} {$end}}"
 		debug probe set_bp z80.acceptIRQ $condition $handler
 		debug probe set_bp r800.acceptIRQ $condition $handler
 	}
 
-	set_help_text profile::sections_create [join {
-		"Usage: profile::sections_create <id>...\n"
+	set_help_text profile::section_create [join {
+		"Usage: profile::section_create <ids>\n"
 		"Predefines sections. Useful to specify the order they appear in."
 	} {}]
-	proc sections_create {ids} {
+	proc section_create {ids} {
+		variable sections
 		foreach id $ids {
-			section_create $id
-		}
-	}
-
-	set_help_text profile::section_create [join {
-		"Usage: profile::section_create <id>\n"
-		"Predefines a section. Useful to specify the order they appear in."
-	} {}]
-	proc section_create {id} {
-		variable sections
-		if {![dict exists $sections $id]} {
-			dict set sections $id [dict create total_time 0 sync_time 0 count 0 balance 0 frame_time 0 frame_time_base 0]
-		}
-	}
-
-	proc section_with {id body} {
-		variable sections
-		section_create $id
-		dict with sections $id {
-			set time [machine_info time]
-			if {$balance > 0} {
-				set total_time [expr $total_time + $time - $sync_time]
+			if {![dict exists $sections $id]} {
+				dict set sections $id [dict create total_time 0 sync_time 0 count 0 balance 0 frame_time 0 frame_time_base 0]
 			}
-			set sync_time $time
-			eval $body
+		}
+	}
+
+	proc section_with {ids body} {
+		variable sections
+		section_create $ids
+		foreach id $ids {
+			dict with sections $id {
+				set time [machine_info time]
+				if {$balance > 0} {
+					set total_time [expr $total_time + $time - $sync_time]
+				}
+				set sync_time $time
+				eval $body
+			}
 		}
 	}
 
 	set_help_text profile::section_begin [join {
-		"Usage: profile::section_begin <id>\n"
+		"Usage: profile::section_begin <ids>\n"
 		"Starts a section. Use the “frame” ID to mark the beginning of a frame."
 	} {}]
-	proc section_begin {id} {
-		section_with $id {
+	proc section_begin {ids} {
+		section_with $ids {
 			incr balance
 			incr count
 		}
 
-		if {$id eq "frame"} {
+		if {"frame" in $ids} {
 			section_frame_flush
 		}
 	}
 
 	set_help_text profile::section_end [join {
-		"Usage: profile::section_end <id>\n"
+		"Usage: profile::section_end <ids>\n"
 		"Ends a section."
 	} {}]
-	proc section_end {id} {
-		section_with $id {
+	proc section_end {ids} {
+		section_with $ids {
 			incr balance -1
 		}
 	}
@@ -161,11 +155,9 @@ namespace eval profile {
 		set time [machine_info time]
 		set frame_total_time [expr $time - $frame_start_time]
 		set frame_start_time $time
-		foreach id [dict keys $sections] {
-			section_with $id {
-				set frame_time [expr $total_time - $frame_time_base]
-				set frame_time_base $total_time
-			}
+		section_with [dict keys $sections] {
+			set frame_time [expr $total_time - $frame_time_base]
+			set frame_time_base $total_time
 		}
 		osd_update
 		if ($frame_break) {
@@ -179,38 +171,36 @@ namespace eval profile {
 			return
 		}
 		variable sections
-		foreach id [dict keys $sections] {
-			section_with $id {
-				variable frame_total_time
-				variable osd_unit
+		section_with [dict keys $sections] {
+			variable frame_total_time
+			variable osd_unit
 
-				if {![osd exists profile.$id]} {
-					variable width
-					variable height
-					set index [lsearch -exact [dict keys $sections] $id]
-					set x [expr ($index * $height / 240) * $width]
-					set y [expr $index * $height % 240]
-					set rgba [osd_hya [expr $index * 0.14] 0.5 1.0]
-					osd create rectangle profile.$id -x $x -y $y -w $width -h $height -scaled true -clip true -rgba 0x00000088
-					osd create rectangle profile.$id.bar -x 0 -y 0 -w 0 -h $height -scaled true -rgba $rgba
-					osd create text profile.$id.text -x 2 -y 1 -size [expr $height - 3] -scaled true -rgba 0xffffffff
-				}
-
-				set fraction [expr $frame_total_time != 0 ? $frame_time / $frame_total_time : 0]
-				set fraction_clamped [expr $fraction < 0 ? 0 : $fraction > 1 ? 1 : $fraction]
-				osd configure profile.$id.bar -w [expr $fraction_clamped * [osd info profile.$id -w]]
-
-				if {$osd_unit eq "s"} {
-					set text [format "%s: %.3f s" $id $frame_time]
-				} elseif {$osd_unit eq "ms"} {
-					set text [format "%s: %.2f ms" $id [to_ms $frame_time]]
-				} elseif {$osd_unit eq "t"} {
-					set text [format "%s: %d T" $id [to_cycles $frame_time]]
-				} else {
-					set text [format "%s: %00.2f%%" $id [expr $fraction * 100]]
-				}
-				osd configure profile.$id.text -text $text
+			if {![osd exists profile.$id]} {
+				variable width
+				variable height
+				set index [lsearch -exact [dict keys $sections] $id]
+				set x [expr ($index * $height / 240) * $width]
+				set y [expr $index * $height % 240]
+				set rgba [osd_hya [expr $index * 0.14] 0.5 1.0]
+				osd create rectangle profile.$id -x $x -y $y -w $width -h $height -scaled true -clip true -rgba 0x00000088
+				osd create rectangle profile.$id.bar -x 0 -y 0 -w 0 -h $height -scaled true -rgba $rgba
+				osd create text profile.$id.text -x 2 -y 1 -size [expr $height - 3] -scaled true -rgba 0xffffffff
 			}
+
+			set fraction [expr $frame_total_time != 0 ? $frame_time / $frame_total_time : 0]
+			set fraction_clamped [expr $fraction < 0 ? 0 : $fraction > 1 ? 1 : $fraction]
+			osd configure profile.$id.bar -w [expr $fraction_clamped * [osd info profile.$id -w]]
+
+			if {$osd_unit eq "s"} {
+				set text [format "%s: %.3f s" $id $frame_time]
+			} elseif {$osd_unit eq "ms"} {
+				set text [format "%s: %.2f ms" $id [to_ms $frame_time]]
+			} elseif {$osd_unit eq "t"} {
+				set text [format "%s: %d T" $id [to_cycles $frame_time]]
+			} else {
+				set text [format "%s: %00.2f%%" $id [expr $fraction * 100]]
+			}
+			osd configure profile.$id.text -text $text
 		}
 	}
 
@@ -243,9 +233,9 @@ namespace eval profile {
 	}
 
 	set_help_text profile [join {
-		"Usage: profile \[<id>] \[<unit>]\n"
+		"Usage: profile \[<ids>] \[<unit>]\n"
 		"Show the current profiling status in the console. "
-		"Optionally specify a section ID and a unit (s, ms, t, %).\n"
+		"Optionally specify section IDs and a unit (s, ms, t, %).\n"
 		"\n"
 		"Legend:\n"
 		"- frame: the time spent in the last frame\n"
@@ -254,40 +244,37 @@ namespace eval profile {
 		"- balance: whether the CPU is currently in a section\n"
 		"  If section starts and ends are imbalanced, balance will ever-increase.\n"
 	} {}]
-	proc profile {{id ""} {unit "s"}} {
+	proc profile {{ids {}} {unit "s"}} {
 		variable sections
-		if {$id eq ""} {
-			foreach id [dict keys $sections] {
-				profile $id $unit
+		if {$ids eq {}} {
+			set ids [dict keys $sections]
+		}
+		section_with $ids {
+			upvar unit unit
+			variable frame_total_time
+			set percentage [expr $frame_total_time != 0 ? $frame_time * 100 / $frame_total_time : 0]
+			set current [expr $total_time - $frame_time_base]
+
+			if {$unit eq "s"} {
+				set frame_unit [format {%.8f s} $frame_time]
+				set current_unit [format {%.8f s} $current]
+			} elseif {$unit eq "ms"} {
+				set frame_unit [format {%.5f ms} [to_ms $frame_time]]
+				set current_unit [format {%.5f ms} [to_ms $current]]
+			} elseif {$unit eq "t"} {
+				set frame_unit [format {%d T} [to_cycles $frame_time]]
+				set current_unit [format {%d T} [to_cycles $current]]
+			} else {
+				set frame_unit [format {%05.2f%%} $percentage]
+				set current_unit [format {%.8f s} $current]
 			}
-		} elseif {[dict exists $sections $id]} {
-			section_with $id {
-				upvar unit unit
-				variable frame_total_time
-				set percentage [expr $frame_total_time != 0 ? $frame_time * 100 / $frame_total_time : 0]
-				set current [expr $total_time - $frame_time_base]
 
-				if {$unit eq "s"} {
-					set frame_unit [format {%.8f s} $frame_time]
-					set current_unit [format {%.8f s} $current]
-				} elseif {$unit eq "ms"} {
-					set frame_unit [format {%.5f ms} [to_ms $frame_time]]
-					set current_unit [format {%.5f ms} [to_ms $current]]
-				} elseif {$unit eq "t"} {
-					set frame_unit [format {%d T} [to_cycles $frame_time]]
-					set current_unit [format {%d T} [to_cycles $current]]
-				} else {
-					set frame_unit [format {%05.2f%%} $percentage]
-					set current_unit [format {%.8f s} $current]
-				}
-
-				if {$frame_total_time != 0} {
-					puts [format {%s :: frame: %s, current: %s, count: %d, balance: %d} \
-						$id $frame_unit $current_unit $count $balance]
-				} else {
-					puts [format {%s :: current: %s, count: %d, balance: %d} \
-						$id $current_unit $count $balance]
-				}
+			if {$frame_total_time != 0} {
+				puts [format {%s :: frame: %s, current: %s, count: %d, balance: %d} \
+					$id $frame_unit $current_unit $count $balance]
+			} else {
+				puts [format {%s :: current: %s, count: %d, balance: %d} \
+					$id $current_unit $count $balance]
 			}
 		}
 	}
