@@ -21,6 +21,8 @@
 # profile::section_scope_bp <ids> <address> [<condition>]
 # profile::section_irq_bp <ids> [<condition>]
 # profile::section_create <ids>
+# profile::section_list [<filter_ids>]
+# profile::section_with <ids> <body>
 #
 # See help <command> for more information.
 #
@@ -107,6 +109,24 @@ namespace eval profile {
 		}
 	}
 
+	set_help_text profile::section_list [join {
+		"Usage: profile::section_list \[<filter_ids>]\n"
+		"Returns a list of all sections, optionally filtered."
+	} {}]
+	proc section_list {{filter_ids {}}} {
+		variable sections
+		set ids [dict keys $sections]
+		foreach filter_id $filter_ids {
+			set index [lsearch $ids $filter_id]
+			set ids [lreplace $ids $index $index]
+		}
+		return $ids
+	}
+
+	set_help_text profile::section_with [join {
+		"Usage: profile::section_with <ids> <body>\n"
+		"Iterate over the specified sections, passed in scope of the body."
+	} {}]
 	proc section_with {ids body} {
 		variable sections
 		section_create $ids
@@ -148,14 +168,13 @@ namespace eval profile {
 	}
 
 	proc section_frame_flush {} {
-		variable sections
 		variable frame_start_time
 		variable frame_total_time
 		variable frame_break
 		set time [machine_info time]
 		set frame_total_time [expr $time - $frame_start_time]
 		set frame_start_time $time
-		section_with [dict keys $sections] {
+		section_with [section_list] {
 			set frame_time [expr $total_time - $frame_time_base]
 			set frame_time_base $total_time
 		}
@@ -170,15 +189,15 @@ namespace eval profile {
 		if {![osd exists profile]} {
 			return
 		}
-		variable sections
-		section_with [dict keys $sections] {
+		section_with [section_list] {
+			upvar index index
 			variable frame_total_time
 			variable osd_unit
 
 			if {![osd exists profile.$id]} {
 				variable width
 				variable height
-				set index [lsearch -exact [dict keys $sections] $id]
+				set index [lsearch -exact [section_list] $id]
 				set x [expr ($index * $height / 240) * $width]
 				set y [expr $index * $height % 240]
 				set rgba [osd_hya [expr $index * 0.14] 0.5 1.0]
@@ -245,9 +264,8 @@ namespace eval profile {
 		"  If section starts and ends are imbalanced, balance will ever-increase.\n"
 	} {}]
 	proc profile {{ids {}} {unit "s"}} {
-		variable sections
 		if {$ids eq {}} {
-			set ids [dict keys $sections]
+			set ids [section_list]
 		}
 		section_with $ids {
 			upvar unit unit
@@ -280,8 +298,7 @@ namespace eval profile {
 	}
 
 	proc profile_tab {args} {
-		variable sections
-		dict keys $sections
+		section_list
 	}
 
 	set_tabcompletion_proc profile [namespace code profile_tab]
