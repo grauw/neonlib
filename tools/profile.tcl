@@ -1,14 +1,6 @@
 #
 # Profiling utility
 #
-# Usage:
-#
-# Start section by writing <id> to I/O port 2Ch.
-# End section by writing <id> to I/O port 2Dh.
-# Delimit a frame by writing 255 to I/O port 2Ch.
-#
-# Details:
-#
 # With this utility you can profile the time spent in sections of your code.
 # To measure a section you need to instrument it with TCL breakpoints or Z80 I/O
 # instructions to indicate the start and end, and what section it belongs to.
@@ -17,18 +9,22 @@
 # “frame” section. This section is treated as a frame delimiter, and every time
 # this section starts all the section times are reset and the OSD is updated.
 #
-# Console commands:
+# Commands:
 #
-# profile_osd - show the on-screen display of the current frame time.
-# profile - show the detailed current profiling status in the console.
+# profile [<id>] [<unit>]
+# profile_osd [<unit>]
+# profile_frame
+# profile::slot_begin <id>
+# profile::slot_end <id>
+# profile::slots_create <id>...
 #
 # See help <command> for more information.
 #
-# Legend: the “frame” value indicates the time spent in the last frame, the
-# “current” value shows the currently accumulated time, the “count” value shows
-# the number of times a section was started, and finally the “balance” value
-# shows whether the CPU is currently in a section. If sections are not started
-# or ended consistently, this value will ever-increase or ever-decrease.
+# Z80 interface:
+#
+# Start a section by writing <id> to I/O port 2Ch on the Z80.
+# End a section by writing <id> to I/O port 2Dh on the Z80.
+# Since only numeric IDs can be used, use 255 to indicate the “frame” ID.
 #
 namespace eval profile {
 	variable slots [dict create]
@@ -47,12 +43,20 @@ namespace eval profile {
 		slot_end [expr $::wp_last_value == 255 ? frame : $::wp_last_value]
 	}]
 
+	set_help_text profile::slots_create [join {
+		"Usage: profile::slots_create <id>...\n"
+		"Predefines slots. Useful to specify the order they appear in."
+	} {}]
 	proc slots_create {slotids} {
 		foreach slotid $slotids {
 			slot_create $slotid
 		}
 	}
 
+	set_help_text profile::slot_create [join {
+		"Usage: profile::slot_create <id>\n"
+		"Predefines a slot. Useful to specify the order they appear in."
+	} {}]
 	proc slot_create {slotid} {
 		variable slots
 		if {![dict exists $slots $slotid]} {
@@ -66,6 +70,10 @@ namespace eval profile {
 		dict with slots $slotid $body
 	}
 
+	set_help_text profile::slot_begin [join {
+		"Usage: profile::slot_begin <id>\n"
+		"Starts a section. Use the “frame” ID to mark the beginning of a frame."
+	} {}]
 	proc slot_begin {slotid} {
 		slot_with $slotid {
 			if {$balance == 0} {
@@ -80,6 +88,10 @@ namespace eval profile {
 		}
 	}
 
+	set_help_text profile::slot_end [join {
+		"Usage: profile::slot_end <id>\n"
+		"Ends a section."
+	} {}]
 	proc slot_end {slotid} {
 		slot_with $slotid {
 			if {$balance == 1} {
@@ -182,9 +194,17 @@ namespace eval profile {
 	}
 
 	set_help_text profile [join {
-		{Show the detailed current profiling status in the console.}
-		{Optionally specify a slot ID and a unit (s, ms, t, %).}
-	} "\n"]
+		"Usage: profile \[<id>] \[<unit>]\n"
+		"Show the current profiling status in the console. "
+		"Optionally specify a slot ID and a unit (s, ms, t, %).\n"
+		"\n"
+		"Legend:\n"
+		"- frame: the time spent in the last frame\n"
+		"- current: shows the currently accumulated time\n"
+		"- count: the number of times the section was started\n"
+		"- balance: whether the CPU is currently in a section\n"
+		"  If section starts and ends are imbalanced, balance will ever-increase.\n"
+	} {}]
 	proc profile {{slotid ""} {unit "s"}} {
 		variable slots
 		if {$slotid eq ""} {
@@ -231,9 +251,11 @@ namespace eval profile {
 	set_tabcompletion_proc profile [namespace code profile_tab]
 
 	set_help_text profile_osd [join {
-		{Show the on-screen display of the current frame time.}
-		{Optionally specify the unit (s, ms, t or %).}
-	} "\n"]
+		"Usage: profile_osd \[<unit>]\n"
+		"Show the on-screen display of the current section frame times. "
+		"The OSD updates at the beginning of each frame. "
+		"Optionally specify the unit (s, ms, t or %)."
+	} {}]
 	proc profile_osd {{unit ""}} {
 		if {$unit ne ""} {
 			variable osd_unit
@@ -253,7 +275,10 @@ namespace eval profile {
 
 	set_tabcompletion_proc profile_osd [namespace code profile_osd_tab]
 
-	set_help_text profile_frame {Advance to the next profiling frame.}
+	set_help_text profile_frame [join {
+		"Usage: profile_frame\n"
+		"Continues execution until the start of the next frame."
+	} {}]
 	proc profile_frame {} {
 		variable frame_break
 		set frame_break true
