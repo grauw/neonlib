@@ -16,6 +16,10 @@
 # profile_frame
 # profile::slot_begin <id>
 # profile::slot_end <id>
+# profile::slot_begin_bp <id> <addr> [<cond>]
+# profile::slot_end_bp <id> <addr> [<cond>]
+# profile::slot_scope_bp <id> <addr> [<cond>]
+# profile::slot_irq_bp <id> [<condition>]
 # profile::slots_create <id>...
 #
 # See help <command> for more information.
@@ -42,6 +46,53 @@ namespace eval profile {
 	debug set_watchpoint write_io 0x2D {} [namespace code {
 		slot_end [expr $::wp_last_value == 255 ? frame : $::wp_last_value]
 	}]
+
+	set_help_text profile::slot_begin_bp [join {
+		"Usage: profile::slot_begin_bp <id> <addr> \[<cond>]\n"
+		"Define a breakpoint which starts a section."
+	} {}]
+	proc slot_begin_bp {slotid addr {cond {}}} {
+		slot_create $slotid
+		debug set_bp $addr $cond [namespace code "slot_begin $slotid"]
+	}
+
+	set_help_text profile::slot_end_bp [join {
+		"Usage: profile::slot_end_bp <id> <addr> \[<cond>]\n"
+		"Define a breakpoint which ends a section."
+	} {}]
+	proc slot_end_bp {slotid addr {cond {}}} {
+		slot_create $slotid
+		debug set_bp $addr $cond [namespace code "slot_end $slotid"]
+	}
+
+	set_help_text profile::slot_scope_bp [join {
+		"Usage: profile::slot_scope_bp <id> <addr> \[<cond>]\n"
+		"Define a breakpoint which starts a section, and will end it after the "
+		"value on the top of the stack is read, typically when the method "
+		"returns or when it is popped. Useful for profiling function calls."
+	} {}]
+	proc slot_scope_bp {slotid addr {cond {}}} {
+		slot_create $slotid
+		set begin [namespace code "slot_begin $slotid"]
+		set end [namespace code "slot_end $slotid"]
+		debug set_bp $addr $cond \
+			"$begin\ndebug set_watchpoint read_mem -once \[reg sp] {} {debug set_condition -once {} {$end}}"
+	}
+
+	set_help_text profile::slot_irq_bp [join {
+		"Usage: profile::slot_irq_bp <id> \[<condition>]\n"
+		"Define a probe breakpoint which starts a section when the CPU accepts "
+		"an IRQ, and ends it after the return address on the stack is read, "
+		"typically when it returns. Useful for profiling interrupt handlers."
+	} {}]
+	proc slot_irq_bp {slotid {condition {}}} {
+		slot_create $slotid
+		set begin [namespace code "slot_begin $slotid"]
+		set end [namespace code "slot_end $slotid"]
+		set handler "$begin\ndebug set_watchpoint read_mem -once \[expr \[reg sp] - 2] {} {debug set_condition -once {} {$end}}"
+		debug probe set_bp z80.acceptIRQ $condition $handler
+		debug probe set_bp r800.acceptIRQ $condition $handler
+	}
 
 	set_help_text profile::slots_create [join {
 		"Usage: profile::slots_create <id>...\n"
