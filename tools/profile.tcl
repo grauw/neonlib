@@ -111,7 +111,7 @@ namespace eval profile {
 	proc section_create {id} {
 		variable sections
 		if {![dict exists $sections $id]} {
-			dict set sections $id [dict create total_time 0 sync_time 0 count 0 balance 0 frame_time 0]
+			dict set sections $id [dict create total_time 0 sync_time 0 count 0 balance 0 frame_time 0 frame_time_base 0]
 		}
 	}
 
@@ -163,8 +163,8 @@ namespace eval profile {
 		set frame_start_time $time
 		foreach id [dict keys $sections] {
 			section_with $id {
-				set frame_time $total_time
-				set total_time 0
+				set frame_time [expr $total_time - $frame_time_base]
+				set frame_time_base $total_time
 			}
 		}
 		osd_update
@@ -265,19 +265,20 @@ namespace eval profile {
 				upvar unit unit
 				variable frame_total_time
 				set percentage [expr $frame_total_time != 0 ? $frame_time * 100 / $frame_total_time : 0]
+				set current [expr $total_time - $frame_time_base]
 
 				if {$unit eq "s"} {
 					set frame_unit [format {%.8f s} $frame_time]
-					set current_unit [format {%.8f s} $total_time]
+					set current_unit [format {%.8f s} $current]
 				} elseif {$unit eq "ms"} {
 					set frame_unit [format {%.5f ms} [to_ms $frame_time]]
-					set current_unit [format {%.5f ms} [to_ms $total_time]]
+					set current_unit [format {%.5f ms} [to_ms $current]]
 				} elseif {$unit eq "t"} {
 					set frame_unit [format {%d T} [to_cycles $frame_time]]
-					set current_unit [format {%d T} [to_cycles $total_time]]
+					set current_unit [format {%d T} [to_cycles $current]]
 				} else {
 					set frame_unit [format {%05.2f%%} $percentage]
-					set current_unit [format {%.8f s} $total_time]
+					set current_unit [format {%.8f s} $current]
 				}
 
 				if {$frame_total_time != 0} {
