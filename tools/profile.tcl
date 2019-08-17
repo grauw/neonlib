@@ -180,26 +180,26 @@ namespace eval profile {
 			return
 		}
 		variable slots
-		set index 0
 		foreach slotid [dict keys $slots] {
 			slot_with $slotid {
-				upvar index index
-				variable width
-				variable height
 				variable frame_total_time
 				variable osd_unit
 
-				set fraction [expr $frame_total_time != 0 ? $frame_time / $frame_total_time : 0]
-
 				if {![osd exists profile.$slotid]} {
+					variable width
+					variable height
+					set index [lsearch -exact [dict keys $slots] $slotid]
+					set x [expr ($index * $height / 240) * $width]
+					set y [expr $index * $height % 240]
 					set rgba [osd_hya [expr $index * 0.14] 0.5 1.0]
-					osd create rectangle profile.$slotid -x 0 -y 0 -w $width -h $height -scaled true -clip true -rgba 0x00000088
+					osd create rectangle profile.$slotid -x $x -y $y -w $width -h $height -scaled true -clip true -rgba 0x00000088
 					osd create rectangle profile.$slotid.bar -x 0 -y 0 -w 0 -h $height -scaled true -rgba $rgba
-					osd create text profile.$slotid.text -x 2 -y 1 -size 5 -scaled true -rgba 0xffffffff
+					osd create text profile.$slotid.text -x 2 -y 1 -size [expr $height - 3] -scaled true -rgba 0xffffffff
 				}
 
-				osd configure profile.$slotid -x [expr ($index * $height / 240) * $width] -y [expr $index * $height % 240]
-				osd configure profile.$slotid.bar -w [expr ($fraction < 0 ? 0 : $fraction > 1 ? 1 : $fraction) * $width]
+				set fraction [expr $frame_total_time != 0 ? $frame_time / $frame_total_time : 0]
+				set fraction_clamped [expr $fraction < 0 ? 0 : $fraction > 1 ? 1 : $fraction]
+				osd configure profile.$slotid.bar -w [expr $fraction_clamped * [osd info profile.$slotid -w]]
 
 				if {$osd_unit eq "s"} {
 					set text [format "%s: %.3f s" $slotid $frame_time]
@@ -212,7 +212,6 @@ namespace eval profile {
 				}
 				osd configure profile.$slotid.text -text $text
 			}
-			incr index
 		}
 	}
 
