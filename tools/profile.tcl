@@ -14,13 +14,13 @@
 # profile [<id>] [<unit>]
 # profile_osd [<unit>]
 # profile_frame
-# profile::slot_begin <id>
-# profile::slot_end <id>
-# profile::slot_begin_bp <id> <addr> [<cond>]
-# profile::slot_end_bp <id> <addr> [<cond>]
-# profile::slot_scope_bp <id> <addr> [<cond>]
-# profile::slot_irq_bp <id> [<condition>]
-# profile::slots_create <id>...
+# profile::section_begin <id>
+# profile::section_end <id>
+# profile::section_begin_bp <id> <address> [<condition>]
+# profile::section_end_bp <id> <address> [<condition>]
+# profile::section_scope_bp <id> <address> [<condition>]
+# profile::section_irq_bp <id> [<condition>]
+# profile::sections_create <id>...
 #
 # See help <command> for more information.
 #
@@ -31,7 +31,7 @@
 # Since only numeric IDs can be used, use 255 to indicate the “frame” ID.
 #
 namespace eval profile {
-	variable slots [dict create]
+	variable sections [dict create]
 	variable frame_start_time 0
 	variable frame_total_time 0
 	variable frame_break false
@@ -40,93 +40,93 @@ namespace eval profile {
 	variable osd_unit %
 
 	debug set_watchpoint write_io 0x2C {} [namespace code {
-		slot_begin [expr $::wp_last_value == 255 ? frame : $::wp_last_value]
+		section_begin [expr $::wp_last_value == 255 ? frame : $::wp_last_value]
 	}]
 
 	debug set_watchpoint write_io 0x2D {} [namespace code {
-		slot_end [expr $::wp_last_value == 255 ? frame : $::wp_last_value]
+		section_end [expr $::wp_last_value == 255 ? frame : $::wp_last_value]
 	}]
 
-	set_help_text profile::slot_begin_bp [join {
-		"Usage: profile::slot_begin_bp <id> <addr> \[<cond>]\n"
+	set_help_text profile::section_begin_bp [join {
+		"Usage: profile::section_begin_bp <id> <address> \[<condition>]\n"
 		"Define a breakpoint which starts a section."
 	} {}]
-	proc slot_begin_bp {slotid addr {cond {}}} {
-		slot_create $slotid
-		debug set_bp $addr $cond [namespace code "slot_begin $slotid"]
+	proc section_begin_bp {id address {condition {}}} {
+		section_create $id
+		debug set_bp $address $condition [namespace code "section_begin $id"]
 	}
 
-	set_help_text profile::slot_end_bp [join {
-		"Usage: profile::slot_end_bp <id> <addr> \[<cond>]\n"
+	set_help_text profile::section_end_bp [join {
+		"Usage: profile::section_end_bp <id> <address> \[<condition>]\n"
 		"Define a breakpoint which ends a section."
 	} {}]
-	proc slot_end_bp {slotid addr {cond {}}} {
-		slot_create $slotid
-		debug set_bp $addr $cond [namespace code "slot_end $slotid"]
+	proc section_end_bp {id address {condition {}}} {
+		section_create $id
+		debug set_bp $address $condition [namespace code "section_end $id"]
 	}
 
-	set_help_text profile::slot_scope_bp [join {
-		"Usage: profile::slot_scope_bp <id> <addr> \[<cond>]\n"
+	set_help_text profile::section_scope_bp [join {
+		"Usage: profile::section_scope_bp <id> <address> \[<condition>]\n"
 		"Define a breakpoint which starts a section, and will end it after the "
 		"value on the top of the stack is read, typically when the method "
 		"returns or when it is popped. Useful for profiling function calls."
 	} {}]
-	proc slot_scope_bp {slotid addr {cond {}}} {
-		slot_create $slotid
-		set begin [namespace code "slot_begin $slotid"]
-		set end [namespace code "slot_end $slotid"]
-		debug set_bp $addr $cond \
+	proc section_scope_bp {id address {condition {}}} {
+		section_create $id
+		set begin [namespace code "section_begin $id"]
+		set end [namespace code "section_end $id"]
+		debug set_bp $address $condition \
 			"$begin\ndebug set_watchpoint read_mem -once \[reg sp] {} {debug set_condition -once {} {$end}}"
 	}
 
-	set_help_text profile::slot_irq_bp [join {
-		"Usage: profile::slot_irq_bp <id> \[<condition>]\n"
+	set_help_text profile::section_irq_bp [join {
+		"Usage: profile::section_irq_bp <id> \[<condition>]\n"
 		"Define a probe breakpoint which starts a section when the CPU accepts "
 		"an IRQ, and ends it after the return address on the stack is read, "
 		"typically when it returns. Useful for profiling interrupt handlers."
 	} {}]
-	proc slot_irq_bp {slotid {condition {}}} {
-		slot_create $slotid
-		set begin [namespace code "slot_begin $slotid"]
-		set end [namespace code "slot_end $slotid"]
+	proc section_irq_bp {id {condition {}}} {
+		section_create $id
+		set begin [namespace code "section_begin $id"]
+		set end [namespace code "section_end $id"]
 		set handler "$begin\ndebug set_watchpoint read_mem -once \[expr \[reg sp] - 2] {} {debug set_condition -once {} {$end}}"
 		debug probe set_bp z80.acceptIRQ $condition $handler
 		debug probe set_bp r800.acceptIRQ $condition $handler
 	}
 
-	set_help_text profile::slots_create [join {
-		"Usage: profile::slots_create <id>...\n"
-		"Predefines slots. Useful to specify the order they appear in."
+	set_help_text profile::sections_create [join {
+		"Usage: profile::sections_create <id>...\n"
+		"Predefines sections. Useful to specify the order they appear in."
 	} {}]
-	proc slots_create {slotids} {
-		foreach slotid $slotids {
-			slot_create $slotid
+	proc sections_create {ids} {
+		foreach id $ids {
+			section_create $id
 		}
 	}
 
-	set_help_text profile::slot_create [join {
-		"Usage: profile::slot_create <id>\n"
-		"Predefines a slot. Useful to specify the order they appear in."
+	set_help_text profile::section_create [join {
+		"Usage: profile::section_create <id>\n"
+		"Predefines a section. Useful to specify the order they appear in."
 	} {}]
-	proc slot_create {slotid} {
-		variable slots
-		if {![dict exists $slots $slotid]} {
-			dict set slots $slotid [dict create total_time 0 start_time -1 count 0 balance 0 frame_time 0]
+	proc section_create {id} {
+		variable sections
+		if {![dict exists $sections $id]} {
+			dict set sections $id [dict create total_time 0 start_time -1 count 0 balance 0 frame_time 0]
 		}
 	}
 
-	proc slot_with {slotid body} {
-		variable slots
-		slot_create $slotid
-		dict with slots $slotid $body
+	proc section_with {id body} {
+		variable sections
+		section_create $id
+		dict with sections $id $body
 	}
 
-	set_help_text profile::slot_begin [join {
-		"Usage: profile::slot_begin <id>\n"
+	set_help_text profile::section_begin [join {
+		"Usage: profile::section_begin <id>\n"
 		"Starts a section. Use the “frame” ID to mark the beginning of a frame."
 	} {}]
-	proc slot_begin {slotid} {
-		slot_with $slotid {
+	proc section_begin {id} {
+		section_with $id {
 			if {$balance == 0} {
 				set start_time [machine_info time]
 			}
@@ -134,17 +134,17 @@ namespace eval profile {
 			incr count
 		}
 
-		if {$slotid eq "frame"} {
-			slot_frame_flush
+		if {$id eq "frame"} {
+			section_frame_flush
 		}
 	}
 
-	set_help_text profile::slot_end [join {
-		"Usage: profile::slot_end <id>\n"
+	set_help_text profile::section_end [join {
+		"Usage: profile::section_end <id>\n"
 		"Ends a section."
 	} {}]
-	proc slot_end {slotid} {
-		slot_with $slotid {
+	proc section_end {id} {
+		section_with $id {
 			if {$balance == 1} {
 				set total_time [expr $total_time + [machine_info time] - $start_time]
 			}
@@ -152,16 +152,16 @@ namespace eval profile {
 		}
 	}
 
-	proc slot_frame_flush {} {
-		variable slots
+	proc section_frame_flush {} {
+		variable sections
 		variable frame_start_time
 		variable frame_total_time
 		variable frame_break
 		set time [machine_info time]
 		set frame_total_time [expr $time - $frame_start_time]
 		set frame_start_time $time
-		foreach slotid [dict keys $slots] {
-			slot_with $slotid {
+		foreach id [dict keys $sections] {
+			section_with $id {
 				set time [machine_info time]
 				set frame_time [expr $total_time + ($balance > 0 ? $time - $start_time : 0)]
 				set total_time 0
@@ -179,38 +179,38 @@ namespace eval profile {
 		if {![osd exists profile]} {
 			return
 		}
-		variable slots
-		foreach slotid [dict keys $slots] {
-			slot_with $slotid {
+		variable sections
+		foreach id [dict keys $sections] {
+			section_with $id {
 				variable frame_total_time
 				variable osd_unit
 
-				if {![osd exists profile.$slotid]} {
+				if {![osd exists profile.$id]} {
 					variable width
 					variable height
-					set index [lsearch -exact [dict keys $slots] $slotid]
+					set index [lsearch -exact [dict keys $sections] $id]
 					set x [expr ($index * $height / 240) * $width]
 					set y [expr $index * $height % 240]
 					set rgba [osd_hya [expr $index * 0.14] 0.5 1.0]
-					osd create rectangle profile.$slotid -x $x -y $y -w $width -h $height -scaled true -clip true -rgba 0x00000088
-					osd create rectangle profile.$slotid.bar -x 0 -y 0 -w 0 -h $height -scaled true -rgba $rgba
-					osd create text profile.$slotid.text -x 2 -y 1 -size [expr $height - 3] -scaled true -rgba 0xffffffff
+					osd create rectangle profile.$id -x $x -y $y -w $width -h $height -scaled true -clip true -rgba 0x00000088
+					osd create rectangle profile.$id.bar -x 0 -y 0 -w 0 -h $height -scaled true -rgba $rgba
+					osd create text profile.$id.text -x 2 -y 1 -size [expr $height - 3] -scaled true -rgba 0xffffffff
 				}
 
 				set fraction [expr $frame_total_time != 0 ? $frame_time / $frame_total_time : 0]
 				set fraction_clamped [expr $fraction < 0 ? 0 : $fraction > 1 ? 1 : $fraction]
-				osd configure profile.$slotid.bar -w [expr $fraction_clamped * [osd info profile.$slotid -w]]
+				osd configure profile.$id.bar -w [expr $fraction_clamped * [osd info profile.$id -w]]
 
 				if {$osd_unit eq "s"} {
-					set text [format "%s: %.3f s" $slotid $frame_time]
+					set text [format "%s: %.3f s" $id $frame_time]
 				} elseif {$osd_unit eq "ms"} {
-					set text [format "%s: %.2f ms" $slotid [to_ms $frame_time]]
+					set text [format "%s: %.2f ms" $id [to_ms $frame_time]]
 				} elseif {$osd_unit eq "t"} {
-					set text [format "%s: %d T" $slotid [to_cycles $frame_time]]
+					set text [format "%s: %d T" $id [to_cycles $frame_time]]
 				} else {
-					set text [format "%s: %00.2f%%" $slotid [expr $fraction * 100]]
+					set text [format "%s: %00.2f%%" $id [expr $fraction * 100]]
 				}
-				osd configure profile.$slotid.text -text $text
+				osd configure profile.$id.text -text $text
 			}
 		}
 	}
@@ -246,7 +246,7 @@ namespace eval profile {
 	set_help_text profile [join {
 		"Usage: profile \[<id>] \[<unit>]\n"
 		"Show the current profiling status in the console. "
-		"Optionally specify a slot ID and a unit (s, ms, t, %).\n"
+		"Optionally specify a section ID and a unit (s, ms, t, %).\n"
 		"\n"
 		"Legend:\n"
 		"- frame: the time spent in the last frame\n"
@@ -255,14 +255,14 @@ namespace eval profile {
 		"- balance: whether the CPU is currently in a section\n"
 		"  If section starts and ends are imbalanced, balance will ever-increase.\n"
 	} {}]
-	proc profile {{slotid ""} {unit "s"}} {
-		variable slots
-		if {$slotid eq ""} {
-			foreach slotid [dict keys $slots] {
-				profile $slotid $unit
+	proc profile {{id ""} {unit "s"}} {
+		variable sections
+		if {$id eq ""} {
+			foreach id [dict keys $sections] {
+				profile $id $unit
 			}
-		} elseif {[dict exists $slots $slotid]} {
-			slot_with $slotid {
+		} elseif {[dict exists $sections $id]} {
+			section_with $id {
 				upvar unit unit
 				variable frame_total_time
 				set percentage [expr $frame_total_time != 0 ? $frame_time * 100 / $frame_total_time : 0]
@@ -284,18 +284,18 @@ namespace eval profile {
 
 				if {$frame_total_time != 0} {
 					puts [format {%s :: frame: %s, current: %s, count: %d, balance: %d} \
-						$slotid $frame_unit $current_unit $count $balance]
+						$id $frame_unit $current_unit $count $balance]
 				} else {
 					puts [format {%s :: current: %s, count: %d, balance: %d} \
-						$slotid $current_unit $count $balance]
+						$id $current_unit $count $balance]
 				}
 			}
 		}
 	}
 
 	proc profile_tab {args} {
-		variable slots
-		dict keys $slots
+		variable sections
+		dict keys $sections
 	}
 
 	set_tabcompletion_proc profile [namespace code profile_tab]
