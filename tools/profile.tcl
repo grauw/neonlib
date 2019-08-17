@@ -9,6 +9,9 @@
 # “frame” section. This section is treated as a frame delimiter, and every time
 # this section starts all the section times are reset and the OSD is updated.
 #
+# It is also possible to exclude the time spent in one section from another.
+# Useful for interrupt handlers and synchronisation wait loops.
+#
 # Commands:
 #
 # profile [<ids>] [<unit>]
@@ -21,6 +24,7 @@
 # profile::section_scope_bp <ids> <address> [<condition>]
 # profile::section_irq_bp <ids> [<condition>]
 # profile::section_create <ids>
+# profile::section_exclude <exclude_ids> <ids>
 # profile::section_list [<filter_ids>]
 # profile::section_with <ids> <body>
 #
@@ -104,9 +108,43 @@ namespace eval profile {
 		variable sections
 		foreach id $ids {
 			if {![dict exists $sections $id]} {
-				dict set sections $id [dict create total_time 0 sync_time 0 count 0 balance 0 frame_time 0 frame_time_base 0]
+				dict set sections $id [dict create \
+					total_time 0 \
+					sync_time 0 \
+					count 0 \
+					balance 0 \
+					frame_time 0 \
+					frame_time_base 0 \
+					exclude_ids [list] \
+				]
 			}
 		}
+	}
+
+	set_help_text profile::section_exclude [join {
+		"Usage: profile::section_exclude <exclude_ids> <ids>\n"
+		"Excludes measuring time from one section in another."
+	} {}]
+	proc section_exclude {exclude_ids ids} {
+		foreach id $ids {
+			if {$id in [section_dependencies $exclude_ids]} {
+				error "Excluding $exclude_ids from $id introduces a cycle."
+			}
+		}
+		foreach exclude_id $exclude_ids {
+			section_with $ids {
+				upvar exclude_id exclude_id
+				lappend exclude_ids $exclude_id
+			}
+		}
+	}
+
+	proc section_dependencies {ids} {
+		section_with $ids {
+			upvar ids ids_
+			lappend ids_ {*}[section_dependencies $exclude_ids]
+		}
+		return $ids
 	}
 
 	set_help_text profile::section_list [join {
@@ -133,6 +171,10 @@ namespace eval profile {
 		foreach id $ids {
 			dict with sections $id {
 				set time [machine_info time]
+				section_with $exclude_ids {
+					upvar time time_
+					set time_ [expr $time_ - $total_time]
+				}
 				if {$balance > 0} {
 					set total_time [expr $total_time + $time - $sync_time]
 				}
