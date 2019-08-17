@@ -3,26 +3,19 @@
 #
 # Usage:
 #
-# Start profiling a section with in a,(2ch), end with out (2ch),a. ID in A.
-# Start profiling a frame with in a,(2dh), end with out (2dh),a.
-# Every time a frame starts, all section times are reset.
+# Start section by writing <id> to I/O port 2Ch.
+# End section by writing <id> to I/O port 2Dh.
+# Delimit a frame by writing 255 to I/O port 2Ch.
 #
 # Details:
 #
-# With this utility you can profile the time spent in up to 257 sections of your
-# code. To measure a section you need to instrument it with I/O instructions to
-# indicate the start and end of the section.
+# With this utility you can profile the time spent in sections of your code.
+# To measure a section you need to instrument it with TCL breakpoints or Z80 I/O
+# instructions to indicate the start and end, and what section it belongs to.
 #
-# The first 256 sections are instrumented with I/O port 2CH, read with “in” to
-# start the section and write with “out” to end it. The section number is
-# specified as the MSB of the 16-bit I/O address, a little known Z80 feature
-# (see the Z80 manual). With out (n),a and in a,(n) the section number is
-# specified in register A, with out (c),r and in r,(c) in register B.
-#
-# The remaining section is the “frame section”, instrumented with I/O port 2DH.
-# It is started with “in” and ended with “out”, but does not need a section
-# number. This section is treated as a frame delimiter, every time this section
-# starts all section times are reset.
+# Additionally you can divide the measurements in frame blocks by using the
+# “frame” section. This section is treated as a frame delimiter, and every time
+# this section starts all the section times are reset and the OSD is updated.
 #
 # Console commands:
 #
@@ -46,20 +39,12 @@ namespace eval profile {
 	variable height 8
 	variable osd_unit %
 
-	debug set_watchpoint read_io 0x2C {} [namespace code {
-		slot_begin [expr $::wp_last_address >> 8]
-	}]
-
 	debug set_watchpoint write_io 0x2C {} [namespace code {
-		slot_end [expr $::wp_last_address >> 8]
-	}]
-
-	debug set_watchpoint read_io 0x2D {} [namespace code {
-		slot_begin frame
+		slot_begin [expr $::wp_last_value == 255 ? frame : $::wp_last_value]
 	}]
 
 	debug set_watchpoint write_io 0x2D {} [namespace code {
-		slot_end frame
+		slot_end [expr $::wp_last_value == 255 ? frame : $::wp_last_value]
 	}]
 
 	proc slots_create {slotids} {
