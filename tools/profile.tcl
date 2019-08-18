@@ -30,12 +30,6 @@
 #
 # See help <command> for more information.
 #
-# Z80 interface:
-#
-# Start a section by writing <id> to I/O port 2Ch on the Z80.
-# End a section by writing <id> to I/O port 2Dh on the Z80.
-# Since only numeric IDs can be used, use 255 to indicate the “frame” ID.
-#
 namespace eval profile {
 	variable sections [dict create]
 	variable frame_start_time 0
@@ -43,14 +37,6 @@ namespace eval profile {
 	variable width 40
 	variable height 8
 	variable osd_unit %
-
-	debug set_watchpoint write_io 0x2C {} [namespace code {
-		section_begin [expr $::wp_last_value == 255 ? frame : $::wp_last_value]
-	}]
-
-	debug set_watchpoint write_io 0x2D {} [namespace code {
-		section_end [expr $::wp_last_value == 255 ? frame : $::wp_last_value]
-	}]
 
 	set_help_text profile::section_begin_bp [join {
 		"Usage: profile::section_begin_bp <ids> <address> \[<condition>]\n"
