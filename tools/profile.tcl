@@ -340,7 +340,8 @@ namespace eval profile {
 	}
 
 	proc profile_tab {args} {
-		section_list
+		if {[llength $args] == 2} { return [section_list] }
+		if {[llength $args] == 3} { return [list s ms t %] }
 	}
 
 	set_tabcompletion_proc profile [namespace code profile_tab]
@@ -365,7 +366,7 @@ namespace eval profile {
 	}
 
 	proc profile_osd_tab {args} {
-		list s ms t %
+		if {[llength $args] == 2} { return [list s ms t %] }
 	}
 
 	set_tabcompletion_proc profile_osd [namespace code profile_osd_tab]
