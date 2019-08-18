@@ -343,6 +343,7 @@ namespace eval profile {
 		}
 		if {![osd exists profile]} {
 			osd create rectangle profile
+			after "mouse button1 down" [namespace code on_mouse_button1_down]
 		} elseif {$unit eq ""} {
 			osd destroy profile
 		}
@@ -371,6 +372,24 @@ namespace eval profile {
 	}
 
 	set_tabcompletion_proc profile_break [namespace code profile_break_tab]
+
+	proc on_mouse_button1_down {} {
+		if {[osd exists profile]} {
+			profile_break [get_mouse_over_section]
+			after "mouse button1 down" [namespace code on_mouse_button1_down]
+		}
+	}
+
+	proc get_mouse_over_section {} {
+		section_with [section_list] {
+			if {[osd exists profile.$id]} {
+				lassign [osd info profile.$id -mousecoord] x y
+				if {$x >= 0 && $x <= 1 && $y >= 0 && $y <= 1} {
+					return $id
+				}
+			}
+		}
+	}
 
 	namespace export profile
 	namespace export profile_osd
