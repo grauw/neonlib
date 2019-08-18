@@ -16,7 +16,7 @@
 #
 # profile [<ids>] [<unit>]
 # profile_osd [<unit>]
-# profile_frame
+# profile_break <ids>
 # profile::section_begin <ids>
 # profile::section_end <ids>
 # profile::section_begin_bp <ids> <address> [<condition>]
@@ -40,7 +40,6 @@ namespace eval profile {
 	variable sections [dict create]
 	variable frame_start_time 0
 	variable frame_total_time 0
-	variable frame_break false
 	variable width 40
 	variable height 8
 	variable osd_unit %
@@ -116,6 +115,7 @@ namespace eval profile {
 					frame_time 0 \
 					frame_time_base 0 \
 					exclude_ids [list] \
+					break false \
 				]
 			}
 		}
@@ -192,8 +192,11 @@ namespace eval profile {
 		section_with $ids {
 			incr balance
 			incr count
+			if ($break) {
+				set break false
+				debug break
+			}
 		}
-
 		if {"frame" in $ids} {
 			section_frame_flush
 		}
@@ -212,7 +215,6 @@ namespace eval profile {
 	proc section_frame_flush {} {
 		variable frame_start_time
 		variable frame_total_time
-		variable frame_break
 		set time [machine_info time]
 		set frame_total_time [expr $time - $frame_start_time]
 		set frame_start_time $time
@@ -221,10 +223,6 @@ namespace eval profile {
 			set frame_time_base $total_time
 		}
 		osd_update
-		if ($frame_break) {
-			set frame_break false
-			debug break
-		}
 	}
 
 	proc osd_update {} {
@@ -371,19 +369,26 @@ namespace eval profile {
 
 	set_tabcompletion_proc profile_osd [namespace code profile_osd_tab]
 
-	set_help_text profile_frame [join {
-		"Usage: profile_frame\n"
-		"Continues execution until the start of the next frame."
+	set_help_text profile_break [join {
+		"Usage: profile_break <ids>\n"
+		"Breaks execution at the start of the section."
 	} {}]
-	proc profile_frame {} {
-		variable frame_break
-		set frame_break true
-		debug cont
+	proc profile_break {ids} {
+		section_with $ids {
+			set break true
+			debug cont
+		}
 	}
+
+	proc profile_break_tab {args} {
+		if {[llength $args] == 2} { return [section_list] }
+	}
+
+	set_tabcompletion_proc profile_break [namespace code profile_break_tab]
 
 	namespace export profile
 	namespace export profile_osd
-	namespace export profile_frame
+	namespace export profile_break
 }
 
 namespace import profile::*
