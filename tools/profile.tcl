@@ -2,8 +2,8 @@
 # Profiling utility
 #
 # With this utility you can profile the time spent in sections of your code.
-# To measure a section you need to instrument it with TCL breakpoints or Z80 I/O
-# instructions to indicate the start and end, and what section it belongs to.
+# To measure a section you need to instrument it with TCL script breakpoints
+# to indicate the start and end, and what section it belongs to.
 #
 # Additionally you can divide the measurements in frame blocks by using the
 # “frame” section. This section is treated as a frame delimiter, and every time
