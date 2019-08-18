@@ -80,7 +80,7 @@ namespace eval profile {
 		section_create $ids
 		set begin [namespace code "section_begin {$ids}"]
 		set end [namespace code "section_end {$ids}"]
-		set handler "$begin\ndebug set_watchpoint read_mem -once \[expr \[reg sp] - 2] {} {debug set_condition -once {} {$end}}"
+		set handler "$begin\ndebug set_watchpoint read_mem -once \[expr {\[reg sp] - 2}] {} {debug set_condition -once {} {$end}}"
 		debug probe set_bp z80.acceptIRQ $condition $handler
 		debug probe set_bp r800.acceptIRQ $condition $handler
 	}
@@ -112,8 +112,9 @@ namespace eval profile {
 		"Excludes measuring time from one section in another."
 	} {}]
 	proc section_exclude {exclude_ids ids} {
+		set dependencies [section_dependencies $exclude_ids]
 		foreach id $ids {
-			if {$id in [section_dependencies $exclude_ids]} {
+			if {$id in $dependencies} {
 				error "Excluding $exclude_ids from $id introduces a cycle."
 			}
 		}
@@ -154,15 +155,16 @@ namespace eval profile {
 	proc section_with {ids body} {
 		variable sections
 		section_create $ids
+		set machine_time [machine_info time]
 		foreach id $ids {
 			dict with sections $id {
-				set time [machine_info time]
+				set time $machine_time
 				section_with $exclude_ids {
 					upvar time time_
-					set time_ [expr $time_ - $total_time]
+					set time_ [expr {$time_ - $total_time}]
 				}
 				if {$balance > 0} {
-					set total_time [expr $total_time + $time - $sync_time]
+					set total_time [expr {$total_time + $time - $sync_time}]
 				}
 				set sync_time $time
 				eval $body
@@ -202,10 +204,10 @@ namespace eval profile {
 		variable frame_start_time
 		variable frame_total_time
 		set time [machine_info time]
-		set frame_total_time [expr $time - $frame_start_time]
+		set frame_total_time [expr {$time - $frame_start_time}]
 		set frame_start_time $time
 		section_with [section_list] {
-			set frame_time [expr $total_time - $frame_time_base]
+			set frame_time [expr {$total_time - $frame_time_base}]
 			set frame_time_base $total_time
 		}
 		osd_update
@@ -224,17 +226,17 @@ namespace eval profile {
 				variable width
 				variable height
 				set index [lsearch -exact [section_list] $id]
-				set x [expr ($index * $height / 240) * $width]
-				set y [expr $index * $height % 240]
-				set rgba [osd_hya [expr $index * 0.14] 0.5 1.0]
+				set x [expr {($index * $height / 240) * $width}]
+				set y [expr {$index * $height % 240}]
+				set rgba [osd_hya [expr {$index * 0.14}] 0.5 1.0]
 				osd create rectangle profile.$id -x $x -y $y -w $width -h $height -scaled true -clip true -rgba 0x00000088
 				osd create rectangle profile.$id.bar -x 0 -y 0 -w 0 -h $height -scaled true -rgba $rgba
-				osd create text profile.$id.text -x 2 -y 1 -size [expr $height - 3] -scaled true -rgba 0xffffffff
+				osd create text profile.$id.text -x 2 -y 1 -size [expr {$height - 3}] -scaled true -rgba 0xffffffff
 			}
 
-			set fraction [expr $frame_total_time != 0 ? $frame_time / $frame_total_time : 0]
-			set fraction_clamped [expr $fraction < 0 ? 0 : $fraction > 1 ? 1 : $fraction]
-			osd configure profile.$id.bar -w [expr $fraction_clamped * [osd info profile.$id -w]]
+			set fraction [expr {$frame_total_time != 0 ? $frame_time / $frame_total_time : 0}]
+			set fraction_clamped [expr {$fraction < 0 ? 0 : $fraction > 1 ? 1 : $fraction}]
+			osd configure profile.$id.bar -w [expr {$fraction_clamped * [osd info profile.$id -w]}]
 
 			if {$osd_unit eq "s"} {
 				set text [format "%s: %.3f s" $id $frame_time]
@@ -243,38 +245,38 @@ namespace eval profile {
 			} elseif {$osd_unit eq "t"} {
 				set text [format "%s: %d T" $id [to_cycles $frame_time]]
 			} else {
-				set text [format "%s: %00.2f%%" $id [expr $fraction * 100]]
+				set text [format "%s: %00.2f%%" $id [expr {$fraction * 100}]]
 			}
 			osd configure profile.$id.text -text $text
 		}
 	}
 
 	proc osd_hya {h y a} {
-		set h [expr ($h - floor($h)) * 8.0]
-		osd_yuva $y [expr $h < 2.0 ? -1.0 : $h < 4.0 ? $h - 3.0 : $h < 6.0 ? 1.0 : 7.0 - $h] \
-		            [expr $h < 2.0 ? $h - 1.0 : $h < 4.0 ? 1.0 : $h < 6.0 ? 5.0 - $h : -1.0] $a
+		set h [expr {($h - floor($h)) * 8.0}]
+		osd_yuva $y [expr {$h < 2.0 ? -1.0 : $h < 4.0 ? $h - 3.0 : $h < 6.0 ? 1.0 : 7.0 - $h}] \
+		            [expr {$h < 2.0 ? $h - 1.0 : $h < 4.0 ? 1.0 : $h < 6.0 ? 5.0 - $h : -1.0}] $a
 	}
 
 	proc osd_yuva {y u v a} {
-		set r [fraction_to_uint8 [expr $y + 1.28033 * 0.615 * $v]]
-		set g [fraction_to_uint8 [expr $y - 0.21482 * 0.436 * $u - 0.38059 * 0.615 * $v]]
-		set b [fraction_to_uint8 [expr $y + 2.12798 * 0.436 * $u]]
+		set r [fraction_to_uint8 [expr {$y + 1.28033 * 0.615 * $v}]]
+		set g [fraction_to_uint8 [expr {$y - 0.21482 * 0.436 * $u - 0.38059 * 0.615 * $v}]]
+		set b [fraction_to_uint8 [expr {$y + 2.12798 * 0.436 * $u}]]
 		set a [fraction_to_uint8 $a]
-		expr $r << 24 | $g << 16 | $b << 8 | $a
+		expr {$r << 24 | $g << 16 | $b << 8 | $a}
 	}
 
 	proc fraction_to_uint8 {value} {
-		set value [expr round($value * 255)]
-		expr $value > 255 ? 255 : $value < 0 ? 0 : $value
+		set value [expr {round($value * 255)}]
+		expr {$value > 255 ? 255 : $value < 0 ? 0 : $value}
 	}
 
 	proc to_ms {seconds} {
-		expr $seconds * 1000
+		expr {$seconds * 1000}
 	}
 
 	proc to_cycles {seconds} {
 		set cpu [get_active_cpu]
-		expr round($seconds * [machine_info ${cpu}_freq])
+		expr {round($seconds * [machine_info ${cpu}_freq])}
 	}
 
 	set_help_text profile [join {
@@ -296,8 +298,8 @@ namespace eval profile {
 		section_with $ids {
 			upvar unit unit
 			variable frame_total_time
-			set percentage [expr $frame_total_time != 0 ? $frame_time * 100 / $frame_total_time : 0]
-			set current [expr $total_time - $frame_time_base]
+			set percentage [expr {$frame_total_time != 0 ? $frame_time * 100 / $frame_total_time : 0}]
+			set current [expr {$total_time - $frame_time_base}]
 
 			if {$unit eq "s"} {
 				set frame_unit [format {%.8f s} $frame_time]
