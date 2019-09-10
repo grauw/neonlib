@@ -85,6 +85,22 @@ namespace eval profile {
 		debug probe set_bp r800.acceptIRQ $condition $handler
 	}
 
+	set_help_text profile::section_vdp_bp [join {
+		"Usage: profile::section_vdp_bp <ids> \[<condition>]\n"
+		"Define a VDP command breakpoint which starts a section when a VDP "
+		"command is executing and ends it when it completes."
+	} {}]
+	proc section_vdp_bp {ids {condition {}}} {
+		section_create $ids
+		if {[debug probe read VDP.commandExecuting]} {
+			section_begin $ids
+		}
+		set begin [namespace code "section_begin {$ids}"]
+		set end [namespace code "section_end {$ids}"]
+		set handler "if {\[debug probe read VDP.commandExecuting\]} {$begin} else {$end}"
+		debug probe set_bp VDP.commandExecuting $condition $handler
+	}
+
 	set_help_text profile::section_create [join {
 		"Usage: profile::section_create <ids>\n"
 		"Predefines sections. Useful to specify the order they appear in."
