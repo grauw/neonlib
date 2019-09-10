@@ -196,7 +196,7 @@ namespace eval profile {
 		section_with $ids {
 			incr balance
 			incr count
-			if ($break) {
+			if {$break} {
 				set break false
 				debug break
 			}
