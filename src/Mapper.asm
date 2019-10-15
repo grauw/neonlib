@@ -4,6 +4,8 @@
 Mapper: MACRO
 	primaryMapperSlot:
 		db 0
+	mapperVariableTable:
+		dw 0
 	initialPage0:
 		db 0
 	initialPage1:
@@ -55,12 +57,16 @@ MapperSegment: MACRO
 ; ix = this
 ; ix <- this
 Mapper_Construct: PROC
-	ld a,0
-	ld de,0402H
+	xor a
+	ld de,0401H
 	call BIOS_ExtendedBIOS
 	and a
 	jr z,Throw
-	ld (ix + Mapper.primaryMapperSlot),b
+	ld (ix + Mapper.primaryMapperSlot),a
+	ld (ix + Mapper.mapperVariableTable),l
+	ld (ix + Mapper.mapperVariableTable + 1),h
+	ld de,0402H
+	call BIOS_ExtendedBIOS
 	ld e,ixl
 	ld d,ixh
 	ld bc,Mapper.Allocate
@@ -103,9 +109,8 @@ Mapper_RestoreInitialState:
 
 ; ix = this
 Mapper_PrintInfo: PROC
-	ld de,0401H
-	call BIOS_ExtendedBIOS
-	ex de,hl
+	ld e,(ix + Mapper.mapperVariableTable)
+	ld d,(ix + Mapper.mapperVariableTable + 1)
 Loop:
 	ld a,(de)
 	inc de
