@@ -107,6 +107,30 @@ Mapper_RestoreInitialState:
 	ld a,(ix + Mapper.initialPage0)
 	jp Mapper_instance.PutP0
 
+; a = slot
+; ix = this
+; f <- c: RAM
+; Modifies: f, b, de, hl
+Mapper_IsRAMSlot: PROC
+	ld b,a
+	ld l,(ix + Mapper.mapperVariableTable)
+	ld h,(ix + Mapper.mapperVariableTable + 1)
+	ld de,8
+Loop:
+	ld a,(hl)
+	and a
+	jr z,NotFound
+	cp b
+	jr z,Found
+	add hl,de
+	jr Loop
+Found:
+	scf
+NotFound:
+	ld a,b
+	ret
+	ENDP
+
 ; ix = this
 Mapper_PrintInfo: PROC
 	ld e,(ix + Mapper.mapperVariableTable)
