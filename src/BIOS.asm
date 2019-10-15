@@ -128,3 +128,41 @@ H.MDTM: equ 0FF93H
 PPI_PORT_A: equ 0A8H
 PPI_PORT_B: equ 0A9H
 PPI_PORT_C: equ 0AAH
+
+; d = device ID
+; e = function call
+; Modifies: depends on function call, alternate & index registers preserved
+BIOS_ExtendedBIOS: PROC
+	ex af,af'
+	exx
+	push af
+	push bc
+	push de
+	push hl
+	ld a,(HOKVLD)
+	bit 0,a
+	jr z,Throw
+	exx
+	ex af,af'
+	push ix
+	push iy
+	call EXTBIO
+	pop iy
+	pop ix
+	ex af,af'
+	exx
+	pop hl
+	pop de
+	pop bc
+	pop af
+	exx
+	ex af,af'
+	ret
+Throw:
+	ld hl,BIOS_noExtendedBIOSError
+	call System_ThrowExceptionWithMessage
+	ENDP
+
+;
+BIOS_noExtendedBIOSError:
+	db "No extended BIOS available.",13,10,0

@@ -55,15 +55,9 @@ MapperSegment: MACRO
 ; ix = this
 ; ix <- this
 Mapper_Construct:
-	ld a,(HOKVLD)
-	bit 0,a
-	ld hl,Mapper_noMapperSupportError
-	jp z,System_ThrowExceptionWithMessage
-	push ix
 	ld a,0
 	ld de,0402H
-	call EXTBIO
-	pop ix
+	call BIOS_ExtendedBIOS
 	push hl
 	and a
 	ld hl,Mapper_noMapperSupportError
@@ -108,11 +102,8 @@ Mapper_RestoreInitialState:
 
 ; ix = this
 Mapper_PrintInfo: PROC
-	push ix
-	ld a,0
 	ld de,0401H
-	call EXTBIO
-	pop ix
+	call BIOS_ExtendedBIOS
 	ex de,hl
 Loop:
 	ld a,(de)
