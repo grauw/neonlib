@@ -54,15 +54,12 @@ MapperSegment: MACRO
 
 ; ix = this
 ; ix <- this
-Mapper_Construct:
+Mapper_Construct: PROC
 	ld a,0
 	ld de,0402H
 	call BIOS_ExtendedBIOS
-	push hl
 	and a
-	ld hl,Mapper_noMapperSupportError
-	jp z,System_ThrowExceptionWithMessage
-	pop hl
+	jr z,Throw
 	ld (ix + Mapper.primaryMapperSlot),b
 	ld e,ixl
 	ld d,ixh
@@ -79,6 +76,10 @@ Mapper_Construct:
 	call Mapper_instance.GetP2
 	ld (ix + Mapper.initialPage2),a
 	ret
+Throw:
+	ld hl,Mapper_noMapperSupportError
+	call System_ThrowExceptionWithMessage
+	ENDP
 
 ; ix = this
 ; ix <- this
