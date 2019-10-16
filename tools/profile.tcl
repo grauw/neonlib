@@ -82,7 +82,9 @@ namespace eval profile {
 		set end [namespace code "section_end {$ids}"]
 		set handler "$begin\ndebug set_watchpoint read_mem -once \[expr {\[reg sp] - 2}] {} {debug set_condition -once {} {$end}}"
 		debug probe set_bp z80.acceptIRQ $condition $handler
-		debug probe set_bp r800.acceptIRQ $condition $handler
+		if {{r800.acceptIRQ} in [debug probe list]} {
+			debug probe set_bp r800.acceptIRQ $condition $handler
+		}
 	}
 
 	set_help_text profile::section_vdp_bp [join {
