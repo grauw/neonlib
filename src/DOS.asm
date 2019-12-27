@@ -4,8 +4,6 @@
 REBOOT:   equ 0H
 BDOS:     equ 5H
 DTA:      equ 80H
-HOKVLD:   equ 0FB20H
-EXTBIO:   equ 0FFCAH
 
 ; MSX-DOS function calls
 _TERM0:   equ 0H
