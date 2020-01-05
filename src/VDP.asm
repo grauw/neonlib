@@ -18,7 +18,6 @@ VDP_MODE_TEXT2: equ 01001B
 VDP_InitMirrorsOnVDPUpgrades: PROC
 	ld hl,IDBYT2
 	call System_ReadBIOS
-	and a
 	cp 1
 	jr c,MSX1
 	jr z,MSX2
