@@ -85,7 +85,7 @@ Heap_CanAllocate:
 	ret
 
 ; Check whether the specified space can be allocated on an aligned address.
-; I.e. whether a subsequent Allocate call will fail or no.
+; I.e. whether a subsequent AllocateAligned call will fail or no.
 ; bc = space
 ; ix = this
 ; bc <- space
@@ -366,7 +366,7 @@ Heap_CheckIntegrity: PROC
 	or d       ; done if end reached (null pointer)
 	jp z,End
 	scf
-	sbc hl,de  ; check if it next comes after heap start
+	sbc hl,de  ; check if next comes after heap start
 	call nc,Throw
 Loop:
 	ld a,e     ; check if next is multiple of four
@@ -392,7 +392,7 @@ Loop:
 	ld e,(ix + HeapBlock.next)
 	ld d,(ix + HeapBlock.next + 1)
 	ld a,e
-	or d       ; done stop if end reached (null pointer)
+	or d       ; done if end reached (null pointer)
 	jp z,End
 	and a
 	sbc hl,de  ; check if next block comes after space end + 1
