@@ -66,18 +66,15 @@ Heap_GetRootBlock:
 	add ix,de
 	ret
 
-;
 ; Check whether the specified space can be allocated.
 ; I.e. whether a subsequent Allocate call will fail or no.
-;
-; ix = this
 ; bc = space
+; ix = this
 ; bc <- space
 ; de <- previous block
 ; hl <- offset (= 0)
 ; f <- c: can allocate
 ; Modifies: af, bc, de, hl, ix
-;
 Heap_CanAllocate:
 	call Heap_GetRootBlock
 	call Heap_RoundBC
@@ -87,18 +84,15 @@ Heap_CanAllocate:
 	pop iy
 	ret
 
-;
 ; Check whether the specified space can be allocated on an aligned address.
 ; I.e. whether a subsequent Allocate call will fail or no.
-;
-; ix = this
 ; bc = space
+; ix = this
 ; bc <- space
 ; de <- previous block
 ; hl <- offset
 ; f <- c: can allocate
 ; Modifies: af, bc, de, hl, ix
-;
 Heap_CanAllocateAligned:
 	call Heap_GetRootBlock
 	call Heap_RoundBC
@@ -108,14 +102,11 @@ Heap_CanAllocateAligned:
 	pop iy
 	ret
 
-;
 ; Get the total amount of free heap space.
 ; Note that this space may be fragmented and not allocatable in one block.
-;
 ; ix = this
 ; bc <- space
 ; Modifies: af, bc, d, ix
-;
 Heap_GetFreeSpace:
 	call Heap_GetRootBlock
 	ld bc,0
@@ -125,26 +116,21 @@ Heap_GetFreeSpace:
 	pop iy
 	ret
 
-;
 ; Allocate a block of memory on the heap.
-;
-; ix = this
 ; bc = number of bytes to allocate
+; ix = this
 ; bc <- allocated space
 ; de <- allocated memory address
 ; Modifies: af, bc, de, hl, ix
 ; Throws out of memory exception
-;
 Heap_Allocate:
 	call Heap_CanAllocate
 	call nc,Heap_ThrowOutOfHeapException
 	jp HeapBlock_Allocate
 
-;
 ; Allocate a block of memory on the heap on an aligned address.
-;
-; ix = this
 ; bc = number of bytes to allocate
+; ix = this
 ; bc <- allocated space
 ; de <- allocated memory address
 ; Modifies: af, bc, de, hl, ix
@@ -154,7 +140,6 @@ Heap_AllocateAligned:
 	call nc,Heap_ThrowOutOfHeapException
 	jp HeapBlock_Allocate
 
-;
 Heap_ThrowOutOfHeapException:
 	ld hl,Heap_outOfHeapException
 	jp System_ThrowExceptionWithMessage
@@ -228,24 +213,18 @@ ExactFit:
 	ret
 	ENDP
 
-;
 ; Allocates, then clears the allocated space.
-;
 ; a = clear value
 ; Remaining parameters are the same as Allocate
-;
 Heap_AllocateClear:
 	push af
 	call Heap_Allocate
 	pop af
 	jp Heap_ClearSpace
 
-;
 ; Allocates on an aligned address, then clears the allocated space.
-;
 ; a = clear value
 ; Remaining parameters are the same as AllocateAligned
-;
 Heap_AllocateAlignedClear:
 	push af
 	call Heap_Allocate
@@ -274,16 +253,13 @@ Skip:
 	ret
 	ENDP
 
-;
 ; Free a block of previously allocated space.
 ; Please be careful to specify exactly the address and amount of memory.
 ; The return values of Allocate can directly be fed into Free.
-;
-; ix = this
 ; bc = number of bytes to free
 ; de = memory address to free
+; ix = this
 ; Modifies: af, bc, de, hl, ix
-;
 Heap_Free: PROC
 	ex de,hl   ; hl = memory address
 	call Heap_GetRootBlock
@@ -369,12 +345,9 @@ CoalescePreviousRoot:
 	jp CoalescePreviousRootContinue
 	ENDP
 
-;
 ; Checks heap integrity to guard against overflow or otherwise corrupted data.
-;
 ; ix = this
 ; Modifies: none
-;
 Heap_CheckIntegrity: PROC
 	push af
 	push bc
@@ -437,14 +410,11 @@ Throw:
 	jp System_ThrowExceptionWithMessage
 	ENDP
 
-;
 ; Checks whether the specified address lies inside this heap.
-;
 ; de = memory address
 ; ix = this
 ; f <- c: in this heap
 ; Modifies: af, hl
-;
 Heap_IsInHeap:
 	ld l,(ix + Heap.start)
 	ld h,(ix + Heap.start + 1)
