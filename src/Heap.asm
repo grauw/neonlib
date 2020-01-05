@@ -10,9 +10,7 @@
 ; which contain the size of the free space and a reference to the next block.
 ; These form a linked list which is updated as space is allocated and freed.
 ;
-Heap: equ HeapBlock
-
-HeapBlock: MACRO
+Heap: MACRO
 	space:
 		dw 0
 	next:
@@ -23,10 +21,10 @@ HeapBlock: MACRO
 ; Heap starts full, free initial block(s) after construction.
 ; ix = this
 Heap_Construct:
-	ld (ix + HeapBlock.space),0
-	ld (ix + HeapBlock.space + 1),0
-	ld (ix + HeapBlock.next),0
-	ld (ix + HeapBlock.next + 1),0
+	ld (ix + Heap.space),0
+	ld (ix + Heap.space + 1),0
+	ld (ix + Heap.next),0
+	ld (ix + Heap.next + 1),0
 	ret
 
 ; Check whether the specified space can be allocated.
@@ -42,8 +40,8 @@ Heap_CanAllocate:
 	call Heap_CheckIntegrity
 	call Heap_RoundBC
 	push iy
-	ld iy,HeapBlock_MatchDefault
-	call HeapBlock_MatchNext
+	ld iy,Heap_MatchDefault
+	call Heap_MatchNext
 	pop iy
 	ret
 
@@ -60,8 +58,8 @@ Heap_CanAllocateAligned:
 	call Heap_CheckIntegrity
 	call Heap_RoundBC
 	push iy
-	ld iy,HeapBlock_MatchAligned
-	call HeapBlock_MatchNext
+	ld iy,Heap_MatchAligned
+	call Heap_MatchNext
 	pop iy
 	ret
 
@@ -74,8 +72,8 @@ Heap_GetFreeSpace:
 	call Heap_CheckIntegrity
 	ld bc,0
 	push iy
-	ld iy,HeapBlock_MatchAddFreeSpace
-	call HeapBlock_MatchNext
+	ld iy,Heap_MatchAddFreeSpace
+	call Heap_MatchNext
 	pop iy
 	ret
 
@@ -89,7 +87,7 @@ Heap_GetFreeSpace:
 Heap_Allocate:
 	call Heap_CanAllocate
 	call nc,Heap_ThrowOutOfHeapException
-	jp HeapBlock_Allocate
+	jp Heap_AllocateBlock
 
 ; Allocate a block of memory on the heap on an aligned address.
 ; bc = number of bytes to allocate
@@ -101,7 +99,7 @@ Heap_Allocate:
 Heap_AllocateAligned:
 	call Heap_CanAllocateAligned
 	call nc,Heap_ThrowOutOfHeapException
-	jp HeapBlock_Allocate
+	jp Heap_AllocateBlock
 
 Heap_ThrowOutOfHeapException:
 	ld hl,Heap_outOfHeapException
@@ -115,64 +113,64 @@ Heap_ThrowOutOfHeapException:
 ; de <- allocated memory address
 ; Modifies: af, bc, de, hl, ix
 ; Throws out of memory exception
-HeapBlock_Allocate: PROC
+Heap_AllocateBlock: PROC
 	ld a,l
 	or h
 	jr z,NoOffset
 Split:
 	ex de,hl
-	ld l,(ix + HeapBlock.space)
-	ld h,(ix + HeapBlock.space + 1)
+	ld l,(ix + Heap.space)
+	ld h,(ix + Heap.space + 1)
 	sbc hl,de
 	push hl
-	ld (ix + HeapBlock.space),e
-	ld (ix + HeapBlock.space + 1),d
+	ld (ix + Heap.space),e
+	ld (ix + Heap.space + 1),d
 	ex de,hl
 	ld e,ixl
 	ld d,ixh
 	push de
 	add hl,de
 	ex de,hl
-	ld l,(ix + HeapBlock.next)
-	ld h,(ix + HeapBlock.next + 1)
-	ld (ix + HeapBlock.next),e
-	ld (ix + HeapBlock.next + 1),d
+	ld l,(ix + Heap.next)
+	ld h,(ix + Heap.next + 1)
+	ld (ix + Heap.next),e
+	ld (ix + Heap.next + 1),d
 	ld ixl,e
 	ld ixh,d
 	pop de
-	ld (ix + HeapBlock.next),l
-	ld (ix + HeapBlock.next + 1),h
+	ld (ix + Heap.next),l
+	ld (ix + Heap.next + 1),h
 	pop hl
-	ld (ix + HeapBlock.space),l
-	ld (ix + HeapBlock.space + 1),h
+	ld (ix + Heap.space),l
+	ld (ix + Heap.space + 1),h
 NoOffset:
 	push de
-	ld l,(ix + HeapBlock.space)
-	ld h,(ix + HeapBlock.space + 1)
+	ld l,(ix + Heap.space)
+	ld h,(ix + Heap.space + 1)
 	sbc hl,bc
 	jr z,ExactFit
 Fit:
-	ld e,(ix + HeapBlock.next)
-	ld d,(ix + HeapBlock.next + 1)
+	ld e,(ix + Heap.next)
+	ld d,(ix + Heap.next + 1)
 	add ix,bc
-	ld (ix + HeapBlock.space),l
-	ld (ix + HeapBlock.space + 1),h
-	ld (ix + HeapBlock.next),e
-	ld (ix + HeapBlock.next + 1),d
+	ld (ix + Heap.space),l
+	ld (ix + Heap.space + 1),h
+	ld (ix + Heap.next),e
+	ld (ix + Heap.next + 1),d
 	ex (sp),ix  ; ix = previous block
 	pop hl      ; hl = new block
-	ld (ix + HeapBlock.next),l
-	ld (ix + HeapBlock.next + 1),h
+	ld (ix + Heap.next),l
+	ld (ix + Heap.next + 1),h
 	sbc hl,bc   ; de = removed block
 	ex de,hl
 	ret
 ExactFit:
-	ld l,(ix + HeapBlock.next)
-	ld h,(ix + HeapBlock.next + 1)
+	ld l,(ix + Heap.next)
+	ld h,(ix + Heap.next + 1)
 	ex (sp),ix  ; ix = previous block
 	pop de      ; de = removed block
-	ld (ix + HeapBlock.next),l
-	ld (ix + HeapBlock.next + 1),h
+	ld (ix + Heap.next),l
+	ld (ix + Heap.next + 1),h
 	ret
 	ENDP
 
@@ -237,8 +235,8 @@ Heap_Free: PROC
 	call c,System_ThrowException  ; space wraps around memory
 	sbc hl,bc
 Loop:
-	ld e,(ix + HeapBlock.next)
-	ld d,(ix + HeapBlock.next + 1)
+	ld e,(ix + Heap.next)
+	ld d,(ix + Heap.next + 1)
 	ld a,e
 	or d       ; if end reached (null pointer)
 	jp z,PassedEnd
@@ -261,8 +259,8 @@ PassedEnd:
 CoalesceNextContinue:
 	push bc
 	push hl  ; check if block connects to previous block
-	ld c,(ix + HeapBlock.space)
-	ld b,(ix + HeapBlock.space + 1)
+	ld c,(ix + Heap.space)
+	ld b,(ix + Heap.space + 1)
 	ld a,b
 	or c
 	jp z,CoalescePreviousRoot     ; if root, do not coalesce
@@ -276,8 +274,8 @@ CoalesceNextContinue:
 	jp z,CoalescePrevious
 	call c,System_ThrowException  ; already partially free (previous block)
 CoalescePreviousRootContinue:
-	ld (ix + HeapBlock.next),l
-	ld (ix + HeapBlock.next + 1),h
+	ld (ix + Heap.next),l
+	ld (ix + Heap.next + 1),h
 CoalescePreviousContinue:
 	ld (hl),c  ; write new block
 	inc hl
@@ -291,13 +289,13 @@ CoalesceNext:
 	push ix
 	ld ixl,e
 	ld ixh,d
-	ld e,(ix + HeapBlock.next)
-	ld d,(ix + HeapBlock.next + 1)
+	ld e,(ix + Heap.next)
+	ld d,(ix + Heap.next + 1)
 	ld a,c     ; add coalesced block’s space to this one
-	add a,(ix + HeapBlock.space)
+	add a,(ix + Heap.space)
 	ld c,a
 	ld a,b
-	adc a,(ix + HeapBlock.space + 1)
+	adc a,(ix + Heap.space + 1)
 	ld b,a
 	pop ix
 	jp CoalesceNextContinue
@@ -305,10 +303,10 @@ CoalescePrevious:
 	push ix
 	pop hl
 	ld a,c
-	add a,(ix + HeapBlock.space)
+	add a,(ix + Heap.space)
 	ld c,a
 	ld a,b
-	adc a,(ix + HeapBlock.space + 1)
+	adc a,(ix + Heap.space + 1)
 	ld b,a
 	jp CoalescePreviousContinue
 CoalescePreviousRoot:
@@ -326,8 +324,8 @@ Heap_CheckIntegrity: PROC
 	push de
 	push hl
 	push ix
-	ld e,(ix + HeapBlock.next)
-	ld d,(ix + HeapBlock.next + 1)
+	ld e,(ix + Heap.next)
+	ld d,(ix + Heap.next + 1)
 	ld a,e
 	or d       ; done if end reached (null pointer)
 	jp z,End
@@ -337,8 +335,8 @@ Loop:
 	call nz,Throw
 	ld ixl,e
 	ld ixh,d
-	ld l,(ix + HeapBlock.space)
-	ld h,(ix + HeapBlock.space + 1)
+	ld l,(ix + Heap.space)
+	ld h,(ix + Heap.space + 1)
 	ld a,l     ; check if space is not zero
 	or h
 	call z,Throw
@@ -348,8 +346,8 @@ Loop:
 	and a
 	adc hl,de  ; check if space does not wrap around memory
 	call c,Throw
-	ld e,(ix + HeapBlock.next)
-	ld d,(ix + HeapBlock.next + 1)
+	ld e,(ix + Heap.next)
+	ld d,(ix + Heap.next + 1)
 	ld a,e
 	or d       ; done if end reached (null pointer)
 	jp z,End
@@ -387,9 +385,9 @@ Heap_RoundBC:
 ; ix <- block
 ; f <- z, nc: end reached
 ; Modifies: af, bc, de, hl, ix
-HeapBlock_MatchNext:
-	ld l,(ix + HeapBlock.next)
-	ld h,(ix + HeapBlock.next + 1)
+Heap_MatchNext:
+	ld l,(ix + Heap.next)
+	ld h,(ix + Heap.next + 1)
 	ld a,l
 	or h       ; if end reached (null pointer)
 	ret z
@@ -409,12 +407,12 @@ HeapBlock_MatchNext:
 ; de <- previous block
 ; hl <- offset
 ; f <- c: can allocate
-HeapBlock_MatchDefault:
-	ld l,(ix + HeapBlock.space)
-	ld h,(ix + HeapBlock.space + 1)
+Heap_MatchDefault:
+	ld l,(ix + Heap.space)
+	ld h,(ix + Heap.space + 1)
 	and a
 	sbc hl,bc
-	jr c,HeapBlock_MatchNext
+	jr c,Heap_MatchNext
 	ld hl,0
 	scf
 	ret
@@ -427,20 +425,20 @@ HeapBlock_MatchDefault:
 ; de <- previous block
 ; hl <- offset
 ; f <- c: can allocate
-HeapBlock_MatchAligned:
+Heap_MatchAligned:
 	push de
 	xor a
 	ld d,a
 	sub l
 	ld e,a
-	ld l,(ix + HeapBlock.space)
-	ld h,(ix + HeapBlock.space + 1)
+	ld l,(ix + Heap.space)
+	ld h,(ix + Heap.space + 1)
 	and a
 	sbc hl,de
 	pop de
-	jr c,HeapBlock_MatchNext
+	jr c,Heap_MatchNext
 	sbc hl,bc
-	jr c,HeapBlock_MatchNext
+	jr c,Heap_MatchNext
 	ld l,a
 	ld h,0
 	scf
@@ -449,13 +447,13 @@ HeapBlock_MatchAligned:
 ; bc = space
 ; ix = this
 ; bc <- new space
-HeapBlock_MatchAddFreeSpace:
-	ld l,(ix + HeapBlock.space)
-	ld h,(ix + HeapBlock.space + 1)
+Heap_MatchAddFreeSpace:
+	ld l,(ix + Heap.space)
+	ld h,(ix + Heap.space + 1)
 	add hl,bc
 	ld c,l
 	ld b,h
-	jr HeapBlock_MatchNext
+	jr Heap_MatchNext
 
 ;
 Heap_outOfHeapException:
