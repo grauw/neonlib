@@ -436,9 +436,8 @@ Heap_RoundBC:
 	or b
 	call z,System_ThrowException
 	dec bc
-	ld a,c
-	or 3
-	ld c,a
+	set 0,c
+	set 1,c
 	inc bc
 	ret
 
