@@ -10,60 +10,23 @@
 ; which contain the size of the free space and a reference to the next block.
 ; These form a linked list which is updated as space is allocated and freed.
 ;
-Heap: MACRO ?start, ?size
-	start:
-		dw ?start
-	capacity:
-		dw ?size
-	end:
-		dw ?start + ?size
-	rootBlock: HeapBlock
-	_size:
-	ENDM
+Heap: equ HeapBlock
 
 HeapBlock: MACRO
 	space:
 		dw 0
 	next:
 		dw 0
+	_size:
 	ENDM
 
+; Heap starts full, free initial block(s) after construction.
 ; ix = this
 Heap_Construct:
-	ld l,(ix + Heap.start)
-	ld h,(ix + Heap.start + 1)
-	ld c,(ix + Heap.capacity)
-	ld b,(ix + Heap.capacity + 1)
-	ld a,b
-	or c
-	call z,System_ThrowException   ; capacity must not be 0
-	ld a,l
-	and 3
-	call nz,System_ThrowException  ; start position must be multiple of 4
-	ld a,c
-	and 3
-	call nz,System_ThrowException  ; capacity must be multiple of 4
-	push hl
-	add hl,bc
-	pop hl
-	call c,System_ThrowException   ; end position must not exceed 64k
-	ld (ix + Heap.rootBlock.next),l
-	ld (ix + Heap.rootBlock.next + 1),h
-	ld (hl),c
-	inc hl
-	ld (hl),b
-	inc hl
-	ld (hl),0
-	inc hl
-	ld (hl),0
-	ret
-
-; ix = this
-; ix <- root block
-Heap_GetRootBlock:
-	call Heap_CheckIntegrity
-	ld de,Heap.rootBlock
-	add ix,de
+	ld (ix + HeapBlock.space),0
+	ld (ix + HeapBlock.space + 1),0
+	ld (ix + HeapBlock.next),0
+	ld (ix + HeapBlock.next + 1),0
 	ret
 
 ; Check whether the specified space can be allocated.
@@ -76,7 +39,7 @@ Heap_GetRootBlock:
 ; f <- c: can allocate
 ; Modifies: af, bc, de, hl, ix
 Heap_CanAllocate:
-	call Heap_GetRootBlock
+	call Heap_CheckIntegrity
 	call Heap_RoundBC
 	push iy
 	ld iy,HeapBlock_MatchDefault
@@ -94,7 +57,7 @@ Heap_CanAllocate:
 ; f <- c: can allocate
 ; Modifies: af, bc, de, hl, ix
 Heap_CanAllocateAligned:
-	call Heap_GetRootBlock
+	call Heap_CheckIntegrity
 	call Heap_RoundBC
 	push iy
 	ld iy,HeapBlock_MatchAligned
@@ -108,7 +71,7 @@ Heap_CanAllocateAligned:
 ; bc <- space
 ; Modifies: af, bc, d, ix
 Heap_GetFreeSpace:
-	call Heap_GetRootBlock
+	call Heap_CheckIntegrity
 	ld bc,0
 	push iy
 	ld iy,HeapBlock_MatchAddFreeSpace
@@ -262,8 +225,17 @@ Skip:
 ; Modifies: af, bc, de, hl, ix
 Heap_Free: PROC
 	ex de,hl   ; hl = memory address
-	call Heap_GetRootBlock
+	call Heap_CheckIntegrity
 	call Heap_RoundBC
+	ld a,l
+	or h
+	call z,System_ThrowException  ; if null
+	ld a,l
+	and 3
+	call nz,System_ThrowException  ; if not aligned
+	add hl,bc
+	call c,System_ThrowException  ; space wraps around memory
+	sbc hl,bc
 Loop:
 	ld e,(ix + HeapBlock.next)
 	ld d,(ix + HeapBlock.next + 1)
@@ -354,20 +326,11 @@ Heap_CheckIntegrity: PROC
 	push de
 	push hl
 	push ix
-	ld l,(ix + Heap.start)
-	ld h,(ix + Heap.start + 1)
-	ld c,(ix + Heap.end)
-	ld b,(ix + Heap.end + 1)
-	ld de,Heap.rootBlock
-	add ix,de
 	ld e,(ix + HeapBlock.next)
 	ld d,(ix + HeapBlock.next + 1)
 	ld a,e
 	or d       ; done if end reached (null pointer)
 	jp z,End
-	scf
-	sbc hl,de  ; check if next comes after heap start
-	call nc,Throw
 Loop:
 	ld a,e     ; check if next is multiple of four
 	and 3
@@ -385,10 +348,6 @@ Loop:
 	and a
 	adc hl,de  ; check if space does not wrap around memory
 	call c,Throw
-	scf
-	sbc hl,bc  ; check if space end does not pass heap end
-	call nc,Throw
-	adc hl,bc
 	ld e,(ix + HeapBlock.next)
 	ld d,(ix + HeapBlock.next + 1)
 	ld a,e
@@ -409,24 +368,6 @@ Throw:
 	ld hl,Heap_integrityCheckException
 	jp System_ThrowExceptionWithMessage
 	ENDP
-
-; Checks whether the specified address lies inside this heap.
-; de = memory address
-; ix = this
-; f <- c: in this heap
-; Modifies: af, hl
-Heap_IsInHeap:
-	ld l,(ix + Heap.start)
-	ld h,(ix + Heap.start + 1)
-	scf
-	sbc hl,de
-	ret nc
-	ld a,l
-	add a,(ix + Heap.capacity)
-	ld l,a
-	ld a,h
-	adc a,(ix + Heap.capacity + 1)
-	ret
 
 ; Round bc up to a multiple of 4
 ; bc = value
