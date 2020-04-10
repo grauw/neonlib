@@ -4,7 +4,7 @@
 
 ; h = memory page
 ; a <- slot ID formatted FxxxSSPP
-; Modifies: af, bc, de, hl
+; Modifies: f, bc, de
 Memory_GetSlot: PROC
 	in a,(0A8H)
 	bit 7,h
@@ -25,7 +25,6 @@ PrimaryShiftDone:
 	ex de,hl
 	ld hl,EXPTBL
 	add hl,bc
-	ld c,a
 	ld a,(hl)
 	and 80H
 	or c
