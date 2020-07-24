@@ -362,7 +362,7 @@ Memory_MatchSlotString: PROC
 	push af
 	push bc
 	push de
-	call RDSLT
+	call Memory_ReadSlot
 	pop de
 	pop bc
 	ex de,hl
