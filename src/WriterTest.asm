@@ -8,7 +8,7 @@ WriterTest_Test:
 WriterTest_TestCount: PROC
 	ld hl,WRITEBUFFER
 	ld bc,256
-	call NullWriter_class.New
+	ld ix,WriterTest_writer
 	call NullWriter_Construct
 
 	call Writer_GetCount
@@ -47,6 +47,9 @@ Loop2:
 	call nz,System_ThrowException
 
 	call NullWriter_Destruct
-	call NullWriter_class.Delete
 	ret
 	ENDP
+
+;
+WriterTest_writer:
+	NullWriter

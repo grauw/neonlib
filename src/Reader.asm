@@ -24,9 +24,6 @@ Reader: MACRO
 	_size:
 	ENDM
 
-Reader_class: Class Reader, Reader_template, Heap_main
-Reader_template: Reader
-
 ; hl = buffer start
 ; bc = buffer size
 ; de = buffer filler

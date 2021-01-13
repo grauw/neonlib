@@ -30,9 +30,6 @@ Writer: MACRO
 	_size:
 	ENDM
 
-Writer_class: Class Writer, Writer_template, Heap_main
-Writer_template: Writer
-
 ; hl = buffer start
 ; bc = buffer size
 ; de = buffer flusher

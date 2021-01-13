@@ -8,9 +8,6 @@ FileWriter: MACRO
 	_size:
 	ENDM
 
-FileWriter_class: Class FileWriter, FileWriter_template, Heap_main
-FileWriter_template: FileWriter
-
 ; de = file path
 ; hl = buffer start
 ; bc = buffer size

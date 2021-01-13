@@ -6,9 +6,6 @@ NullWriter: MACRO
 	_size:
 	ENDM
 
-NullWriter_class: Class NullWriter, NullWriter_template, Heap_main
-NullWriter_template: NullWriter
-
 ; hl = buffer start
 ; bc = buffer size
 ; ix = this

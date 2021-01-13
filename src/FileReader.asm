@@ -8,9 +8,6 @@ FileReader: MACRO
 	_size:
 	ENDM
 
-FileReader_class: Class FileReader, FileReader_template, Heap_main
-FileReader_template: FileReader
-
 ; de = file path
 ; hl = buffer start
 ; bc = buffer size
