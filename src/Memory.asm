@@ -3,7 +3,7 @@
 ;
 
 ; h = memory page
-; a <- slot ID formatted FxxxSSPP
+; a <- slot ID formatted F000SSPP
 ; Modifies: f, bc, de
 Memory_GetSlot: PROC
 	in a,(0A8H)
