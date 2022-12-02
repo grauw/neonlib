@@ -25,16 +25,17 @@ PrimaryShiftDone:
 	ex de,hl
 	ld hl,EXPTBL
 	add hl,bc
-	ld a,(hl)
+	ex de,hl
+	ld a,(de)
 	and 80H
 	or c
+	ret p
 	ld c,a
-	inc hl  ; move to SLTTBL
-	inc hl
-	inc hl
-	inc hl
-	ld a,(hl)
-	ex de,hl
+	inc de  ; move to SLTTBL
+	inc de
+	inc de
+	inc de
+	ld a,(de)
 	bit 7,h
 	jr z,SecondaryShiftContinue
 	rrca
