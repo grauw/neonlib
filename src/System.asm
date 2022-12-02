@@ -483,7 +483,7 @@ System_exceptionMessage:
 	db "An exception occurred.", 0
 
 System_crlf:
-	db "\r\n", 0
+	db 13, 10, 0
 
 	SECTION RAM_RESIDENT
 
