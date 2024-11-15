@@ -1,6 +1,6 @@
 all:
-	mkdir -p bin
-	java -jar tools/glass.jar -I gen src/COM.asm bin/neonlib.com bin/neonlib.sym
+	mkdir -p gen bin
+	java -jar tools/glass.jar -I gen src/COM.asm bin/neonlib.com gen/neonlib.sym
 
 run: all
 	openmsx -machine Panasonic_FS-A1GT -ext ide -script openmsx.tcl

@@ -4,8 +4,6 @@
 
 	INCLUDE "Macros.asm"
 
-DEBUG: equ 1
-
 HEAP_SIZE: equ 1000H
 STACK_SIZE: equ 100H
 

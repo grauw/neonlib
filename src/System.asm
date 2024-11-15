@@ -434,9 +434,6 @@ System_ThrowException:
 
 ; hl = message
 System_ThrowExceptionWithMessage:
-	IF DEBUG
-	in a,(02EH)
-	ENDIF
 	ld a,1
 	ld (System_instance.exceptionCode),a
 	ld (System_instance.exceptionMessage),hl

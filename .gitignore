@@ -1,6 +1,6 @@
 /gen/
 /bin/
-
+/.vscode/
 /.project
 /.externalToolBuilders/
 .DS_Store
