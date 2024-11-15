@@ -422,7 +422,7 @@ System_TryCall_M: MACRO ?method
 	ld hl,(System_instance.unwindStack)
 	ex (sp),hl
 	ld (System_instance.unwindStack),sp
-	call ?try
+	call ?method
 	ex (sp),hl
 	ld (System_instance.unwindStack),hl
 	pop hl
