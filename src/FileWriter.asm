@@ -14,19 +14,36 @@ FileWriter: MACRO
 ; ix = this
 ; ix <- this
 ; de <- this
-FileWriter_Construct:
+FileWriter_Construct: PROC
 	push de
 	ld de,FileWriter_WriteToFile
 	call Writer_Construct
 	pop de
+	ld a,(de)
+	cp 0FFH  ; file info block?
 	ld a,00000010B  ; write only
 	ld b,0
-	call DOS_CreateFileHandle
+	call CreateOrOpenFileHandle
 	call DOS_TerminateIfError
 	ld (ix + FileWriter.fileHandle),b
 	ld e,ixl
 	ld d,ixh
 	ret
+CreateOrOpenFileHandle:
+	jp nz,DOS_CreateFileHandle
+	push af
+	push ix
+	ld ixl,e
+	ld ixh,d
+	ld a,(ix + FileInfoBlock.fileSize + 0)
+	or (ix + FileInfoBlock.fileSize + 1)
+	or (ix + FileInfoBlock.fileSize + 2)
+	or (ix + FileInfoBlock.fileSize + 3)
+	call nz,System_ThrowException
+	pop ix
+	pop af
+	jp DOS_OpenFileHandle
+	ENDP
 
 ; ix = this
 ; ix <- this
