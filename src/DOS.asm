@@ -252,12 +252,23 @@ DOS_FindFirstEntry:
 	ld c,_FFIRST
 	jp BDOS
 
-; ix = new file info block
+; ix = previous file info block
 ; ix <- new file info block
 ; a <- error
 ; f <- nz: error
 DOS_FindNextEntry:
 	ld c,_FNEXT
+	jp BDOS
+
+; b = attributes (bit 7: create new flag)
+; de = path string or file info block
+; hl = filename string (only if de is FIB)
+; ix = new file info block with template filename
+; ix <- new file info block
+; a <- error
+; f <- nz: error
+DOS_FindNewEntry:
+	ld c,_FNEW
 	jp BDOS
 
 ; a = open mode (bit 0: no write, bit 1: no read, bit 2: inheritable)
