@@ -203,7 +203,7 @@ FileInfoBlock: MACRO
 	marker:
 		db 0FFH
 	name:
-		ds 14
+		ds 13
 	attributes:
 		db 0
 	lastModificationTime:
