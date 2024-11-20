@@ -17,8 +17,6 @@ Reader: MACRO
 		db 0
 	filler:
 		dw System_ThrowException
-	fillPending:
-		db 0
 	bits:
 		db 0
 	_size:
@@ -39,10 +37,8 @@ Reader_Construct:
 	ld (ix + Reader.filler + 1),d
 	add hl,bc
 	ld (ix + Reader.bufferEnd),h
-	dec hl  ; trap the next read
-	ld (ix + Reader.bufferPosition),l
+	ld (ix + Reader.bufferPosition),0FFH  ; fill pending
 	ld (ix + Reader.bufferPosition + 1),h
-	ld (ix + Reader.fillPending),-1
 	ld (ix + Reader.bits),0
 	ld e,ixl
 	ld d,ixh
@@ -64,18 +60,16 @@ Continue:
 	inc a
 	ld (iy + Reader.bufferPosition + 1),a
 	cp (iy + Reader.bufferEnd)
-	jr z,FinishBlock
+	jr nc,FillPending
+	pop af
+	ret
+FillPending:
+	jr nz,FinishBlock
+	ld (iy + Reader.bufferPosition),0FFH  ; fill pending
 	pop af
 	ret
 FinishBlock:
 	pop af
-	bit 0,(iy + Reader.fillPending)
-	jr nz,PendingFill
-	ld (iy + Reader.fillPending),-1
-	ld (iy + Reader.bufferPosition),0FFH
-	dec (iy + Reader.bufferPosition + 1)
-	ret
-PendingFill:
 	call Reader_FinishBlock_IY
 	jp iy
 	ENDP
@@ -89,7 +83,6 @@ Reader_FinishBlock_IY:
 	pop hl
 	pop de
 	pop bc
-	ld (iy + Reader.fillPending),0
 	ld (iy + Reader.bufferPosition),0
 	ld a,(iy + Reader.bufferStart)
 	ld (iy + Reader.bufferPosition + 1),a
@@ -201,8 +194,9 @@ NoMoreBytes:
 ; hl <- source address
 ; Modifies: af
 Reader_ReadBlockDirect_IY: PROC
-	bit 0,(iy + Reader.fillPending)
-	call nz,Reader_FinishBlock_IY
+	ld a,(iy + Reader.bufferPosition + 1)
+	cp (iy + Reader.bufferEnd)
+	call nc,Reader_FinishBlock_IY  ; fill pending
 	ld l,(iy + Reader.bufferPosition)
 	ld h,(iy + Reader.bufferPosition + 1)
 	push hl
@@ -216,15 +210,11 @@ Reader_ReadBlockDirect_IY: PROC
 	pop hl
 	ret
 Overflow:
-	and a
 	pop bc
 	ld l,0
 	ld h,(iy + Reader.bufferEnd)
-	dec hl
-	ld (iy + Reader.bufferPosition),l
+	ld (iy + Reader.bufferPosition),0FFH  ; fill pending
 	ld (iy + Reader.bufferPosition + 1),h
-	ld (iy + Reader.fillPending),-1
-	inc hl
 	and a
 	sbc hl,bc
 	ld a,l
