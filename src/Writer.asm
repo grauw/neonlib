@@ -16,11 +16,11 @@ Writer: MACRO
 		jp Writer_Write.Continue
 
 	bufferStart:
-		dw 0
+		db 0
 	bufferSize:
-		dw 0
+		db 0
 	bufferEnd:
-		dw 0
+		db 0
 	bufferEndCopyMargin:
 		db 0
 	flusher:
@@ -40,17 +40,14 @@ Writer_Construct:
 	ld a,l  ; check if buffer is 256-byte aligned
 	or c
 	call nz,System_ThrowException
-	ld (ix + Writer.bufferStart),l
-	ld (ix + Writer.bufferStart + 1),h
-	ld (ix + Writer.bufferSize),c
-	ld (ix + Writer.bufferSize + 1),b
+	ld (ix + Writer.bufferStart),h
+	ld (ix + Writer.bufferSize),b
 	ld (ix + Writer.flusher),e
 	ld (ix + Writer.flusher + 1),d
 	ld (ix + Writer.bufferPosition),l
 	ld (ix + Writer.bufferPosition + 1),h
 	add hl,bc
-	ld (ix + Writer.bufferEnd),l
-	ld (ix + Writer.bufferEnd + 1),h
+	ld (ix + Writer.bufferEnd),h
 	dec h
 	dec h
 	dec h
@@ -86,7 +83,7 @@ Continue:
 	ld a,(ix + Writer.bufferPosition + 1)
 	inc a
 	ld (ix + Writer.bufferPosition + 1),a
-	cp (ix + Writer.bufferEnd + 1)
+	cp (ix + Writer.bufferEnd)
 	call z,Writer_FinishBlock
 	pop af
 	ret
@@ -102,7 +99,7 @@ Writer_Copy: PROC
 	add hl,de
 	ld a,h
 	jr nc,Wrap
-	cp (ix + Writer.bufferStart + 1)
+	cp (ix + Writer.bufferStart)
 	jr c,Wrap
 	ld a,(ix + Writer.bufferEndCopyMargin)
 WrapContinue:
@@ -115,7 +112,7 @@ WrapContinue:
 	ld (ix + Writer.bufferPosition + 1),d
 	ret
 Wrap:
-	add a,(ix + Writer.bufferSize + 1)
+	add a,(ix + Writer.bufferSize)
 	ld h,a
 	ld a,(ix + Writer.bufferEndCopyMargin)
 	cp h  ; does the source have a 512 byte margin without wrapping?
@@ -133,13 +130,13 @@ Writer_Copy_Slow: PROC
 	add hl,bc
 	jr c,Split
 	ld a,h
-	cp (ix + Writer.bufferEnd + 1)
+	cp (ix + Writer.bufferEnd)
 	jp c,Writer_WriteBlock
 ; hl = end address
 Split:
 	push bc
-	ld c,(ix + Writer.bufferEnd)
-	ld b,(ix + Writer.bufferEnd + 1)
+	ld c,0
+	ld b,(ix + Writer.bufferEnd)
 	and a
 	sbc hl,bc  ; hl = bytes past end
 	ex (sp),hl
@@ -150,8 +147,8 @@ Split:
 	ld b,h
 	call Writer_WriteBlock
 	pop bc
-	ld l,(ix + Writer.bufferStart)
-	ld h,(ix + Writer.bufferStart + 1)
+	ld l,0
+	ld h,(ix + Writer.bufferStart)
 	ld a,b
 	or c
 	jp nz,Writer_Copy_Slow
@@ -168,7 +165,7 @@ Writer_WriteBlock: PROC
 	add hl,bc
 	jr c,Split
 	ld a,h
-	cp (ix + Writer.bufferEnd + 1)
+	cp (ix + Writer.bufferEnd)
 	jr nc,Split
 	and a
 	sbc hl,bc
@@ -180,8 +177,8 @@ Writer_WriteBlock: PROC
 ; hl = end address
 Split:
 	push bc
-	ld c,(ix + Writer.bufferEnd)
-	ld b,(ix + Writer.bufferEnd + 1)
+	ld c,0
+	ld b,(ix + Writer.bufferEnd)
 	and a
 	sbc hl,bc  ; hl = bytes past end
 	ld c,l
@@ -220,7 +217,7 @@ Writer_WriteBlockDirect:
 	ld a,e
 	neg
 	ld c,a
-	ld a,(ix + Writer.bufferEnd + 1)
+	ld a,(ix + Writer.bufferEnd)
 	sbc a,d
 	ld b,a
 	ret
@@ -232,7 +229,7 @@ Writer_Advance: PROC
 	ld l,(ix + Writer.bufferPosition)
 	ld h,(ix + Writer.bufferPosition + 1)
 	add hl,bc
-	ld b,(ix + Writer.bufferEnd + 1)
+	ld b,(ix + Writer.bufferEnd)
 	jr c,Overflow
 	ld a,h
 	cp b
@@ -307,8 +304,8 @@ Writer_FinishBlock: PROC
 	push hl
 	ld l,(ix + Writer.bufferPosition)
 	ld h,(ix + Writer.bufferPosition + 1)
-	ld e,(ix + Writer.bufferStart)
-	ld d,(ix + Writer.bufferStart + 1)
+	ld e,0
+	ld d,(ix + Writer.bufferStart)
 	and a
 	sbc hl,de
 	call c,System_ThrowException
@@ -325,9 +322,8 @@ Empty:
 	pop hl
 	pop de
 	pop bc
+	ld (ix + Writer.bufferPosition),0
 	ld a,(ix + Writer.bufferStart)
-	ld (ix + Writer.bufferPosition),a
-	ld a,(ix + Writer.bufferStart + 1)
 	ld (ix + Writer.bufferPosition + 1),a
 	ret
 	ENDP

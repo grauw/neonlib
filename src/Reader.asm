@@ -12,9 +12,9 @@ Reader: MACRO
 		jp Reader_Read_IY.Continue
 
 	bufferStart:
-		dw 0
+		db 0
 	bufferEnd:
-		dw 0
+		db 0
 	filler:
 		dw System_ThrowException
 	fillPending:
@@ -34,13 +34,11 @@ Reader_Construct:
 	ld a,l  ; check if buffer is 256-byte aligned
 	or c
 	call nz,System_ThrowException
-	ld (ix + Reader.bufferStart),l
-	ld (ix + Reader.bufferStart + 1),h
+	ld (ix + Reader.bufferStart),h
 	ld (ix + Reader.filler),e
 	ld (ix + Reader.filler + 1),d
 	add hl,bc
-	ld (ix + Reader.bufferEnd),l
-	ld (ix + Reader.bufferEnd + 1),h
+	ld (ix + Reader.bufferEnd),h
 	dec hl  ; trap the next read
 	ld (ix + Reader.bufferPosition),l
 	ld (ix + Reader.bufferPosition + 1),h
@@ -65,7 +63,7 @@ Continue:
 	ld a,(iy + Reader.bufferPosition + 1)
 	inc a
 	ld (iy + Reader.bufferPosition + 1),a
-	cp (iy + Reader.bufferEnd + 1)
+	cp (iy + Reader.bufferEnd)
 	jr z,FinishBlock
 	pop af
 	ret
@@ -92,9 +90,8 @@ Reader_FinishBlock_IY:
 	pop hl
 	pop de
 	pop bc
+	ld (iy + Reader.bufferPosition),0
 	ld a,(iy + Reader.bufferStart)
-	ld (iy + Reader.bufferPosition),a
-	ld a,(iy + Reader.bufferStart + 1)
 	ld (iy + Reader.bufferPosition + 1),a
 	ret
 
@@ -103,15 +100,15 @@ Reader_FinishBlock_IY:
 ; Modifies: af, bc, de, hl
 Reader_FillBuffer_IY:
 	ld a,(iy + Reader.bufferPosition)
-	cp (iy + Reader.bufferEnd)
+	and a
 	call nz,System_ThrowException
 	ld a,(iy + Reader.bufferPosition + 1)
-	cp (iy + Reader.bufferEnd + 1)
+	cp (iy + Reader.bufferEnd)
 	call nz,System_ThrowException
 	ld l,(iy + Reader.bufferPosition)
 	ld h,(iy + Reader.bufferPosition + 1)
-	ld e,(iy + Reader.bufferStart)
-	ld d,(iy + Reader.bufferStart + 1)
+	ld e,0
+	ld d,(iy + Reader.bufferStart)
 	and a
 	sbc hl,de
 	ret z
@@ -221,7 +218,7 @@ Reader_ReadBlockDirect_IY: PROC
 	add hl,bc
 	jr c,Overflow
 	ld a,h
-	cp (iy + Reader.bufferEnd + 1)
+	cp (iy + Reader.bufferEnd)
 	jr nc,Overflow
 	ld (iy + Reader.bufferPosition),l
 	ld (iy + Reader.bufferPosition + 1),h
@@ -230,8 +227,8 @@ Reader_ReadBlockDirect_IY: PROC
 Overflow:
 	and a
 	pop bc
-	ld l,(iy + Reader.bufferEnd)
-	ld h,(iy + Reader.bufferEnd + 1)
+	ld l,0
+	ld h,(iy + Reader.bufferEnd)
 	dec hl
 	ld (iy + Reader.bufferPosition),l
 	ld (iy + Reader.bufferPosition + 1),h
