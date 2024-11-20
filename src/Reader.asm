@@ -76,7 +76,6 @@ FinishBlock:
 	dec (iy + Reader.bufferPosition + 1)
 	ret
 PendingFill:
-	ld (iy + Reader.fillPending),0
 	call Reader_FinishBlock_IY
 	jp iy
 	ENDP
@@ -90,6 +89,7 @@ Reader_FinishBlock_IY:
 	pop hl
 	pop de
 	pop bc
+	ld (iy + Reader.fillPending),0
 	ld (iy + Reader.bufferPosition),0
 	ld a,(iy + Reader.bufferStart)
 	ld (iy + Reader.bufferPosition + 1),a
@@ -99,22 +99,12 @@ Reader_FinishBlock_IY:
 ; iy = this
 ; Modifies: af, bc, de, hl
 Reader_FillBuffer_IY:
-	ld a,(iy + Reader.bufferPosition)
-	and a
-	call nz,System_ThrowException
-	ld a,(iy + Reader.bufferPosition + 1)
-	cp (iy + Reader.bufferEnd)
-	call nz,System_ThrowException
-	ld l,(iy + Reader.bufferPosition)
-	ld h,(iy + Reader.bufferPosition + 1)
 	ld e,0
 	ld d,(iy + Reader.bufferStart)
-	and a
-	sbc hl,de
-	ret z
-	call c,System_ThrowException
-	ld c,l
-	ld b,h
+	ld c,0
+	ld a,(iy + Reader.bufferEnd)
+	sub d
+	ld b,a
 	ld l,(iy + Reader.filler)
 	ld h,(iy + Reader.filler + 1)
 	jp hl
@@ -211,7 +201,8 @@ NoMoreBytes:
 ; hl <- source address
 ; Modifies: af
 Reader_ReadBlockDirect_IY: PROC
-	call Reader_FillIfNeeded_IY
+	bit 0,(iy + Reader.fillPending)
+	call nz,Reader_FinishBlock_IY
 	ld l,(iy + Reader.bufferPosition)
 	ld h,(iy + Reader.bufferPosition + 1)
 	push hl
@@ -244,15 +235,6 @@ Overflow:
 	ld b,a
 	ret
 	ENDP
-
-; iy = this
-Reader_FillIfNeeded_IY:
-	bit 0,(iy + Reader.fillPending)
-	ret z
-	ld (iy + Reader.fillPending),0
-	inc (iy + Reader.bufferPosition)
-	inc (iy + Reader.bufferPosition + 1)
-	jp Reader_FinishBlock_IY
 
 ; bc = nr of bytes to skip
 ; iy = this
