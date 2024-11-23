@@ -27,7 +27,6 @@ Reader: MACRO
 ; de = buffer filler
 ; ix = this
 ; ix <- this
-; de <- this
 Reader_Construct:
 	ld a,l  ; check if buffer is 256-byte aligned
 	or c
@@ -40,13 +39,6 @@ Reader_Construct:
 	ld (ix + Reader.bufferPosition),0FFH  ; fill pending
 	ld (ix + Reader.bufferPosition + 1),h
 	ld (ix + Reader.bits),0
-	ld e,ixl
-	ld d,ixh
-	ret
-
-; ix = this
-; ix <- this
-Reader_Destruct:
 	ret
 
 ; iy = this

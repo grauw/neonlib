@@ -35,7 +35,6 @@ Writer: MACRO
 ; de = buffer flusher
 ; ix = this
 ; ix <- this
-; de <- this
 Writer_Construct:
 	ld a,l  ; check if buffer is 256-byte aligned
 	or c
@@ -56,13 +55,6 @@ Writer_Construct:
 	ld (ix + Writer.count + 1),0
 	ld (ix + Writer.count + 2),0
 	ld (ix + Writer.count + 3),0
-	ld e,ixl
-	ld d,ixh
-	ret
-
-; ix = this
-; ix <- this
-Writer_Destruct:
 	ret
 
 ; a = value

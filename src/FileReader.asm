@@ -13,7 +13,6 @@ FileReader: MACRO
 ; bc = buffer size
 ; ix = this
 ; ix <- this
-; de <- this
 FileReader_Construct:
 	push de
 	ld de,FileReader_ReadFromFile_IY
@@ -23,8 +22,6 @@ FileReader_Construct:
 	call DOS_OpenFileHandle
 	call DOS_TerminateIfError
 	ld (ix + FileReader.fileHandle),b
-	ld e,ixl
-	ld d,ixh
 	ret
 
 ; ix = this
@@ -32,8 +29,7 @@ FileReader_Construct:
 FileReader_Destruct:
 	ld b,(ix + FileReader.fileHandle)
 	call DOS_CloseFileHandle
-	call DOS_TerminateIfError
-	jp Reader_Destruct
+	jp DOS_TerminateIfError
 
 ; bc = byte count
 ; de = buffer start

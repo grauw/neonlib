@@ -13,7 +13,6 @@ FileWriter: MACRO
 ; bc = buffer size
 ; ix = this
 ; ix <- this
-; de <- this
 FileWriter_Construct: PROC
 	push de
 	ld de,FileWriter_WriteToFile
@@ -26,8 +25,6 @@ FileWriter_Construct: PROC
 	call CreateOrOpenFileHandle
 	call DOS_TerminateIfError
 	ld (ix + FileWriter.fileHandle),b
-	ld e,ixl
-	ld d,ixh
 	ret
 CreateOrOpenFileHandle:
 	jp nz,DOS_CreateFileHandle
@@ -50,8 +47,7 @@ CreateOrOpenFileHandle:
 FileWriter_Destruct:
 	ld b,(ix + FileWriter.fileHandle)
 	call DOS_CloseFileHandle
-	call DOS_TerminateIfError
-	jp Writer_Destruct
+	jp DOS_TerminateIfError
 
 ; bc = byte count
 ; de = buffer start

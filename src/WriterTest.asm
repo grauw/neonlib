@@ -45,8 +45,6 @@ Loop2:
 	ld a,c
 	or b
 	call nz,System_ThrowException
-
-	call NullWriter_Destruct
 	ret
 	ENDP
 
