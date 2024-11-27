@@ -37,11 +37,7 @@ HEAP: ds VIRTUAL HEAP_SIZE
 	INCLUDE "Hook.asm"
 	INCLUDE "Application.asm"
 	INCLUDE "Reader.asm"
-	INCLUDE "Writer.asm"
-	INCLUDE "WriterTest.asm"
 	INCLUDE "FileReader.asm"
-	INCLUDE "FileWriter.asm"
-	INCLUDE "NullWriter.asm"
 
 	ENDS
 

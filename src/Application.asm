@@ -19,7 +19,6 @@ Application_Main:
 	call MemoryTest_Test
 	call HeapTest_Test
 	call ClassTest_Test
-	call WriterTest_Test
 
 	ld hl,Application_success
 	call System_Print
