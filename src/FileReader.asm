@@ -2,7 +2,8 @@
 ; Buffered sequential-access file reader
 ;
 FileReader: MACRO
-	super: Reader
+	super:
+		BitReader
 	fileHandle:
 		db 0FFH
 	_size:
@@ -16,7 +17,7 @@ FileReader: MACRO
 FileReader_Construct:
 	push de
 	ld de,FileReader_ReadFromFile_IY
-	call Reader_Construct
+	call BitReader_Construct
 	pop de
 	ld a,00000001B  ; read only
 	call DOS_OpenFileHandle

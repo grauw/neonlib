@@ -37,6 +37,7 @@ HEAP: ds VIRTUAL HEAP_SIZE
 	INCLUDE "Hook.asm"
 	INCLUDE "Application.asm"
 	INCLUDE "Reader.asm"
+	INCLUDE "BitReader.asm"
 	INCLUDE "FileReader.asm"
 
 	ENDS
