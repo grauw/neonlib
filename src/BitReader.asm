@@ -11,7 +11,7 @@ BitReader: MACRO
 
 ; hl = buffer start
 ; bc = buffer size
-; de = buffer filler
+; de = buffer supplier
 ; ix = this
 ; ix <- this
 BitReader_Construct:

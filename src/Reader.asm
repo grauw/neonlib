@@ -6,23 +6,22 @@ Reader: MACRO
 	; a <- value
 	Read_IY:
 		ld a,(0)
-	bufferPosition: equ $ - 2
-		inc (iy + Reader.bufferPosition)
+	address: equ $ - 2
+		inc (iy + Reader.address + 0)
 		ret nz
 		jp Reader_Read_IY.Continue
-
 	bufferStart:
 		db 0
 	bufferEnd:
 		db 0
-	filler:
+	supplier:
 		dw System_ThrowException
 	_size:
 	ENDM
 
 ; hl = buffer start
 ; bc = buffer size
-; de = buffer filler
+; de = buffer supplier
 ; ix = this
 ; ix <- this
 Reader_Construct:
@@ -30,12 +29,12 @@ Reader_Construct:
 	or c
 	call nz,System_ThrowException
 	ld (ix + Reader.bufferStart),h
-	ld (ix + Reader.filler),e
-	ld (ix + Reader.filler + 1),d
+	ld (ix + Reader.supplier + 0),e
+	ld (ix + Reader.supplier + 1),d
 	add hl,bc
 	ld (ix + Reader.bufferEnd),h
-	ld (ix + Reader.bufferPosition),0FFH  ; fill pending
-	ld (ix + Reader.bufferPosition + 1),h
+	ld (ix + Reader.address + 0),0FFH  ; supply pending
+	ld (ix + Reader.address + 1),h
 	ret
 
 ; iy = this
@@ -45,56 +44,52 @@ Reader_Read_IY: PROC
 	jp iy
 Continue:
 	push af
-	ld a,(iy + Reader.bufferPosition + 1)
+	ld a,(iy + Reader.address + 1)
 	inc a
-	ld (iy + Reader.bufferPosition + 1),a
+	ld (iy + Reader.address + 1),a
 	cp (iy + Reader.bufferEnd)
-	jr nc,FillPending
+	jr nc,SupplyPending
 	pop af
 	ret
-FillPending:
-	jr nz,FinishBlock
-	ld (iy + Reader.bufferPosition),0FFH  ; fill pending
+SupplyPending:
+	jr nz,SupplyBuffer
+	ld (iy + Reader.address + 0),0FFH  ; supply pending
 	pop af
 	ret
-FinishBlock:
+SupplyBuffer:
 	pop af
-	call Reader_FinishBlock_IY
+	call Reader_SupplyBuffer_IY
 	jp iy
 	ENDP
 
+; The supplier is called with bc = byte count, de = buffer start
 ; iy = this
-Reader_FinishBlock_IY:
+; Modifies: af
+Reader_SupplyBuffer_IY:
 	push bc
 	push de
 	push hl
-	call Reader_FillBuffer_IY
-	pop hl
-	pop de
-	pop bc
-	ld (iy + Reader.bufferPosition),0
-	ld a,(iy + Reader.bufferStart)
-	ld (iy + Reader.bufferPosition + 1),a
-	ret
-
-; The filler is called with bc = byte count, de = buffer start
-; iy = this
-; Modifies: af, bc, de, hl
-Reader_FillBuffer_IY:
 	ld e,0
 	ld d,(iy + Reader.bufferStart)
 	ld c,0
 	ld a,(iy + Reader.bufferEnd)
 	sub d
 	ld b,a
-	ld l,(iy + Reader.filler)
-	ld h,(iy + Reader.filler + 1)
-	jp hl
+	ld l,(iy + Reader.supplier + 0)
+	ld h,(iy + Reader.supplier + 1)
+	call System_JumpHL
+	pop hl
+	pop de
+	pop bc
+	ld (iy + Reader.address + 0),0
+	ld a,(iy + Reader.bufferStart)
+	ld (iy + Reader.address + 1),a
+	ret
 
 ; bc = byte count
 ; de = buffer start
 ; iy = this
-Reader_DefaultFiller:
+Reader_DefaultSupplier:
 	ret
 
 ; iy = this
@@ -183,27 +178,27 @@ NoMoreBytes:
 ; hl <- source address
 ; Modifies: af
 Reader_ReadBlockDirect_IY: PROC
-	ld a,(iy + Reader.bufferPosition + 1)
+	ld a,(iy + Reader.address + 1)
 	cp (iy + Reader.bufferEnd)
-	call nc,Reader_FinishBlock_IY  ; fill pending
-	ld l,(iy + Reader.bufferPosition)
-	ld h,(iy + Reader.bufferPosition + 1)
+	call nc,Reader_SupplyBuffer_IY  ; supply pending
+	ld l,(iy + Reader.address + 0)
+	ld h,(iy + Reader.address + 1)
 	push hl
 	add hl,bc
 	jr c,Overflow
 	ld a,h
 	cp (iy + Reader.bufferEnd)
 	jr nc,Overflow
-	ld (iy + Reader.bufferPosition),l
-	ld (iy + Reader.bufferPosition + 1),h
+	ld (iy + Reader.address + 0),l
+	ld (iy + Reader.address + 1),h
 	pop hl
 	ret
 Overflow:
 	pop bc
 	ld l,0
 	ld h,(iy + Reader.bufferEnd)
-	ld (iy + Reader.bufferPosition),0FFH  ; fill pending
-	ld (iy + Reader.bufferPosition + 1),h
+	ld (iy + Reader.address + 0),0FFH  ; supply pending
+	ld (iy + Reader.address + 1),h
 	and a
 	sbc hl,bc
 	ld a,l
