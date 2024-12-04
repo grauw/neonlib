@@ -214,19 +214,20 @@ Overflow:
 ; iy = this
 ; Modifies: af, bc, hl
 Reader_Skip_IY: PROC
-Loop:
 	ld a,c
 	or b
 	ret z
+Loop:
 	push bc
 	call Reader_ReadBlockDirect_IY
 	pop hl
 	and a
 	sbc hl,bc
-	call c,System_ThrowException
+	ret z
 	ld c,l
 	ld b,h
-	jp Loop
+	jr nc,Loop
+	jp System_ThrowException
 	ENDP
 
 ; debc = nr of bytes to skip
@@ -246,5 +247,5 @@ Loop:
 	call Reader_Skip_IY
 	ld bc,8000H
 	call Reader_Skip_IY
-	jp Loop
+	jr Loop
 	ENDP
