@@ -38,7 +38,7 @@ HEAP: ds VIRTUAL HEAP_SIZE
 	INCLUDE "Application.asm"
 	INCLUDE "Reader.asm"
 	INCLUDE "BitReader.asm"
-	INCLUDE "FileReader.asm"
+	INCLUDE "FileSupplier.asm"
 
 	ENDS
 

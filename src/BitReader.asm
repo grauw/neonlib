@@ -9,9 +9,7 @@ BitReader: MACRO
 	_size:
 	ENDM
 
-; hl = buffer start
-; bc = buffer size
-; de = buffer supplier
+; de = buffer supplier (de = last read address, bc <- byte count, de <- read address)
 ; ix = this
 ; ix <- this
 BitReader_Construct:

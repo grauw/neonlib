@@ -1,5 +1,5 @@
 ;
-; Memory buffer reader
+; Aligned memory byte reader
 ;
 Reader: MACRO
 	; iy = this
@@ -10,8 +10,6 @@ Reader: MACRO
 		inc (iy + Reader.address + 0)
 		ret nz
 		jp Reader_Read_IY.Continue
-	bufferStart:
-		db 0
 	bufferEnd:
 		db 0
 	supplier:
@@ -19,22 +17,15 @@ Reader: MACRO
 	_size:
 	ENDM
 
-; hl = buffer start
-; bc = buffer size
-; de = buffer supplier
+; de = buffer supplier (de = last read address, de <- buffer start, hl <- buffer size)
 ; ix = this
 ; ix <- this
 Reader_Construct:
-	ld a,l  ; check if buffer is 256-byte aligned
-	or c
-	call nz,System_ThrowException
-	ld (ix + Reader.bufferStart),h
 	ld (ix + Reader.supplier + 0),e
 	ld (ix + Reader.supplier + 1),d
-	add hl,bc
-	ld (ix + Reader.bufferEnd),h
-	ld (ix + Reader.address + 0),0FFH  ; supply pending
-	ld (ix + Reader.address + 1),h
+	ld (ix + Reader.address + 0),0FFH
+	ld (ix + Reader.address + 1),000H
+	ld (ix + Reader.bufferEnd),000H
 	ret
 
 ; iy = this
@@ -46,13 +37,14 @@ Continue:
 	push af
 	ld a,(iy + Reader.address + 1)
 	inc a
-	ld (iy + Reader.address + 1),a
 	cp (iy + Reader.bufferEnd)
 	jr nc,SupplyPending
+	ld (iy + Reader.address + 1),a
 	pop af
 	ret
 SupplyPending:
 	jr nz,SupplyBuffer
+	ld (iy + Reader.address + 1),a
 	ld (iy + Reader.address + 0),0FFH  ; supply pending
 	pop af
 	ret
@@ -62,35 +54,34 @@ SupplyBuffer:
 	jp iy
 	ENDP
 
-; The supplier is called with bc = byte count, de = buffer start
 ; iy = this
-; Modifies: af
 Reader_SupplyBuffer_IY:
 	push bc
 	push de
 	push hl
-	ld e,0
-	ld d,(iy + Reader.bufferStart)
-	ld c,0
-	ld a,(iy + Reader.bufferEnd)
-	sub d
-	ld b,a
+	ld e,(iy + Reader.address + 0)
+	ld d,(iy + Reader.address + 1)
 	ld l,(iy + Reader.supplier + 0)
 	ld h,(iy + Reader.supplier + 1)
 	call System_JumpHL
+	call Reader_SetBuffer_IY
 	pop hl
 	pop de
 	pop bc
-	ld (iy + Reader.address + 0),0
-	ld a,(iy + Reader.bufferStart)
-	ld (iy + Reader.address + 1),a
 	ret
 
-; bc = byte count
 ; de = buffer start
+; hl = buffer size
 ; iy = this
-Reader_DefaultSupplier:
-	ret
+Reader_SetBuffer_IY:
+	ld (iy + Reader.address + 0),e
+	ld (iy + Reader.address + 1),d
+	add hl,de
+	ld (iy + Reader.bufferEnd),h
+	ld a,l
+	and a
+	ret z
+	jp System_ThrowException
 
 ; iy = this
 ; de <- value
