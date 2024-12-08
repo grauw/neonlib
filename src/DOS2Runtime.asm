@@ -24,6 +24,8 @@ DOS2Runtime: MACRO ?main
 		ld hl,(System_instance.exceptionMessage)
 		call c,System_PrintLn
 		ld b,a
+		xor a         ; Workaround for uninitialised memory read bug in in COMMAND2.
+		ld (6499H),a  ; See https://github.com/Konamiman/Nextor/issues/144
 		jp DOS_TerminateWithErrorCode
 	ENDM
 
