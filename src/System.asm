@@ -22,6 +22,12 @@ System: MACRO
 		jp System_ReadBIOS_Interslot
 	readBIOSHandler: equ $ - 2
 
+	; a = character
+	; Modifies: none
+	PrintChar:
+		jp System_PrintChar_BIOS
+	printChar: equ $ - 2
+
 	; Up to 19% faster alternative for large LDIRs (break-even at 21 loops)
 	; hl = source
 	; de = destination
@@ -48,6 +54,7 @@ System: MACRO
 System_CallBIOS: equ System_instance.CallBIOS
 System_ReadBIOS: equ System_instance.ReadBIOS
 System_FastLDIR: equ System_instance.FastLDIR
+System_PrintChar: equ System_instance.PrintChar
 
 System_SetDirectBIOSHandlers:
 	ld hl,System_CallBIOS_Direct
@@ -112,7 +119,7 @@ System_ReadBIOS_Interslot:
 
 ; a = character
 ; Modifies: none
-System_PrintChar:
+System_PrintChar_BIOS:
 	push ix
 	ld ix,CHPUT
 	call System_CallBIOS

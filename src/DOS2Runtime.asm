@@ -3,6 +3,9 @@
 ;
 DOS2Runtime: MACRO ?main
 	Entry:
+		ld hl,PrintChar
+		ld (System_instance.printChar),hl
+
 		call DOS_IsDOS2
 		ld hl,DOS2Runtime_dos2Required
 		jp c,System_PrintLn
@@ -27,6 +30,20 @@ DOS2Runtime: MACRO ?main
 		xor a         ; Workaround for uninitialised memory read bug in in COMMAND2.
 		ld (6499H),a  ; See https://github.com/Konamiman/Nextor/issues/144
 		jp DOS_TerminateWithErrorCode
+
+	PrintChar:
+		push af
+		push bc
+		push de
+		push hl
+		ld e,a
+		ld c,_CONOUT
+		call BDOS
+		pop hl
+		pop de
+		pop bc
+		pop af
+		ret
 	ENDM
 
 ; a = error code
