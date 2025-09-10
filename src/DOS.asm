@@ -199,6 +199,14 @@ GET_P3:   equ 2DH
 .COPY:    equ 082H
 .OVDEST:  equ 081H
 
+RAMAD0: equ 0F341H
+RAMAD1: equ 0F342H
+RAMAD2: equ 0F343H
+RAMAD3: equ 0F344H
+MASTER: equ 0F348H
+SECBUF: equ 0F34DH
+H_BDOS: equ 0F37DH
+
 FileInfoBlock: MACRO
 	marker:
 		db 0FFH
